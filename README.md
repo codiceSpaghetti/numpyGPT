@@ -34,11 +34,12 @@ Instead of relying on automatic differentiation, every layer explicitly implemen
 │   │   ├── functional.py    # Stateless functions (e.g., F.cross_entropy)
 │   │   ├── modules/         # Stateful modules
 │   │   │   ├── __init__.py
-│   │   │   ├── module.py    # Base Module class
-│   │   │   ├── linear.py    # Linear layer with manual backward pass
-│   │   │   ├── embedding.py # Token and positional embeddings
-│   │   │   ├── layerNorm.py #  LayerNorm
-│   │   └── init.py          # Parameter initialization
+│   │   │   ├── activation.py   # Softmax, Relu, Swiglu ecc.
+│   │   │   ├── module.py       # Base Module class
+│   │   │   ├── linear.py       # Linear layer
+│   │   │   ├── embedding.py    # Token and positional embeddings
+│   │   │   ├── layerNorm.py    #  LayerNorm
+│   │   └── init.py             # Parameter initialization
 │   │
 │   ├── optim/               # Optimizers
 │   │   ├── __init__.py

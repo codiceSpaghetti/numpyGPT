@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 
+from numpyGPT.nn.modules.activation import Softmax
 from numpyGPT.nn.modules.embedding import Embedding
 from numpyGPT.nn.modules.layerNorm import LayerNorm
 from numpyGPT.nn.modules.linear import Linear
@@ -121,6 +122,43 @@ class TestLayerNorm(unittest.TestCase):
         self.assertIn("beta", params)
         self.assertIn("gamma", grads)
         self.assertIn("beta", grads)
+
+
+class TestSoftmax(unittest.TestCase):
+    def test_softmax_forward(self):
+        batch_size = 2
+        num_classes = 5
+
+        layer = Softmax()
+        X = np.random.randn(batch_size, num_classes)
+
+        out = layer.forward(X)
+        self.assertEqual(out.shape, (batch_size, num_classes))
+        self.assertTrue(np.allclose(np.sum(out, axis=-1), 1.0))
+        self.assertTrue(np.all(out >= 0))
+
+    def test_softmax_backward(self):
+        batch_size = 3
+        num_classes = 4
+
+        layer = Softmax()
+        X = np.random.randn(batch_size, num_classes)
+        Y_true = np.array([0, 2, 1])
+
+        Y_hat = layer.forward(X)
+        dX = layer.backward(Y_hat, Y_true)
+
+        self.assertEqual(dX.shape, (batch_size, num_classes))
+
+        Y_onehot = np.zeros_like(Y_hat)
+        Y_onehot[np.arange(Y_true.size), Y_true] = 1
+        expected_dX = Y_hat - Y_onehot
+        self.assertTrue(np.allclose(dX, expected_dX))
+
+        params = layer.params()
+        grads = layer.grads()
+        self.assertEqual(len(params), 0)
+        self.assertEqual(len(grads), 0)
 
 
 if __name__ == '__main__':
