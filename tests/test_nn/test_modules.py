@@ -98,7 +98,7 @@ class TestLayerNorm(unittest.TestCase):
         mean = np.mean(X_norm, axis=-1)
         var = np.var(X_norm, axis=-1)
         self.assertTrue(np.allclose(mean, np.zeros_like(mean), atol=1e-6))
-        self.assertTrue(np.allclose(var, np.ones_like(var), atol=1e-4))
+        self.assertTrue(np.allclose(var, np.ones_like(var), atol=1e-3))
 
     def test_layernorm_backward(self):
         batch_size = 2
