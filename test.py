@@ -19,6 +19,43 @@ def run_tests():
     return result.wasSuccessful()
 
 
+def demo_dataloader():
+    import pickle
+    import tempfile
+
+    from numpyGPT.utils.data import DataLoader
+
+    print("=== DataLoader Demo ===")
+
+    temp_dir = tempfile.mkdtemp()
+
+    vocab = list("abcdefghijklmnopqrstuvwxyz ")
+    stoi = {ch: i for i, ch in enumerate(vocab)}
+    itos = {i: ch for i, ch in enumerate(vocab)}
+
+    text = "hello world this is a test of the dataloader component"
+    data = np.array([stoi[c] for c in text], dtype=np.uint16)
+
+    data.tofile(os.path.join(temp_dir, 'train.bin'))
+
+    meta = {'vocab_size': len(vocab), 'stoi': stoi, 'itos': itos}
+    with open(os.path.join(temp_dir, 'meta.pkl'), 'wb') as f:
+        pickle.dump(meta, f)
+
+    loader = DataLoader(temp_dir, 'train', batch_size=2, block_size=8)
+
+    print(f"Vocab size: {loader.vocab_size}")
+    print(f"Data length: {len(loader.data)}")
+
+    X, y = loader.get_batch()
+    print(f"Batch shapes: X={X.shape}, y={y.shape}")
+
+    for i in range(X.shape[0]):
+        x_text = loader.decode(X[i])
+        y_text = loader.decode(y[i])
+        print(f"Sample {i}: '{x_text}' -> '{y_text}'")
+
+
 def demo_adam_optimizer():
     from numpyGPT.nn.modules import Linear
     from numpyGPT.optim import Adam
@@ -53,6 +90,9 @@ def demo_adam_optimizer():
 
 
 if __name__ == '__main__':
+    demo_dataloader()
+    print("\n" + "="*50 + "\n")
+
     demo_adam_optimizer()
     print("\n" + "="*50 + "\n")
 
