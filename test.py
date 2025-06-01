@@ -89,11 +89,37 @@ def demo_adam_optimizer():
     print("Expected: W≈[1, 1], b≈[1] for linear relation y = x1 + x2 + 1")
 
 
+def demo_lr_schedulers():
+    from numpyGPT.nn.modules import Linear
+    from numpyGPT.optim import Adam
+    from numpyGPT.optim.lr_scheduler import WarmupCosineLR
+
+    print("=== Learning Rate Scheduler Demo ===")
+    np.random.seed(42)
+
+    print("--- WarmupCosineLR Demo ---")
+    layer = Linear(2, 1)
+    optimizer = Adam([layer], lr=0.1)
+    scheduler = WarmupCosineLR(optimizer, warmup_iters=3, lr_decay_iters=10, min_lr=0.01)
+
+    print("WarmupCosineLR: lr=0.1, warmup_iters=3, lr_decay_iters=10, min_lr=0.01")
+    for epoch in range(15):
+        if epoch == 3:
+            print("  ^ End of warmup phase")
+        elif epoch == 10:
+            print("  ^ Start of min_lr phase")
+        print(f"Epoch {epoch}: lr = {optimizer.lr:.4f}")
+        scheduler.step()
+
+
 if __name__ == '__main__':
     demo_dataloader()
     print("\n" + "="*50 + "\n")
 
     demo_adam_optimizer()
+    print("\n" + "="*50 + "\n")
+
+    demo_lr_schedulers()
     print("\n" + "="*50 + "\n")
 
     success = run_tests()
