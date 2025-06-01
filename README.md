@@ -20,8 +20,8 @@ Instead of relying on automatic differentiation, every layer explicitly implemen
 
 - A full PyTorch clone (no tensors, no autograd engine)
 - A production-ready framework (use PyTorch for that)
-- Optimized for speed
-- Feature-complete (only implements what's needed for transformer training)
+- Optimized for speed (can only run on CPU)
+- Feature-complete (only implements what's needed for transformer training + some bonus I wanted to implement)
 
 ## Project Structure
 
@@ -34,7 +34,7 @@ Instead of relying on automatic differentiation, every layer explicitly implemen
 │   │   ├── functional.py    # Stateless functions (e.g., F.cross_entropy)
 │   │   ├── modules/         # Stateful modules
 │   │   │   ├── __init__.py
-│   │   │   ├── activation.py   # Softmax, Relu, Swiglu ecc.
+│   │   │   ├── activation.py   # Softmax, Relu ecc.
 │   │   │   ├── module.py       # Base Module class
 │   │   │   ├── linear.py       # Linear layer
 │   │   │   ├── embedding.py    # Token and positional embeddings
@@ -56,9 +56,12 @@ Instead of relying on automatic differentiation, every layer explicitly implemen
 │   │       ├── dataset.py    # Text dataset for character-level modeling
 │   │       └── dataloader.py # Mini-batch generation
 │   │
-│   └── tokenizer/            # Text tokenization
-│       ├── __init__.py
-│       └── char_tokenizer.py  # Character-level tokenizer
+│   ├── tokenizer/            # Text tokenization
+│   │   ├── __init__.py
+│   │       └── char_tokenizer.py  # Character-level tokenizer
+│   │    
+│   └── models/
+│       └──  GPT.py
 │
 ├── tests/                   # Comprehensive testing suite
 │   ├── __init__.py
@@ -79,8 +82,6 @@ Instead of relying on automatic differentiation, every layer explicitly implemen
 ├── data/
 │   └── shakespeare.txt      # Training data
 │
-├── models/
-│   └── GPT.py
 ├── test.py
 ├── train.py
 └── README.md

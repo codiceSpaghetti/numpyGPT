@@ -9,9 +9,9 @@ class Softmax(Module):
         self.cache_output = None
 
     def forward(self, X):
-        X_shifted = X - np.max(X, axis=-1, keepdims=True)
-        exp_X = np.exp(X_shifted)
-        softmax_output = exp_X / np.sum(exp_X, axis=-1, keepdims=True)
+        X_shifted = X - np.max(X, axis=-1, keepdims=True)  # (*, d)
+        exp_X = np.exp(X_shifted)  # (*, d)
+        softmax_output = exp_X / np.sum(exp_X, axis=-1, keepdims=True)  # (*, d)
         self.cache_output = softmax_output
         return softmax_output
 
@@ -20,11 +20,15 @@ class Softmax(Module):
             Y_hat = self.cache_output
             Y = np.zeros_like(Y_hat)
             Y[np.arange(Y_true.size), Y_true] = 1
-            return Y_hat - Y
+            # CrossEntropy + Softmax derivative simplifies beautifully to:
+            return Y_hat - Y  # ∂(CE○Softmax)/∂x = ŷ - y  (see: https://www.parasdahal.com/softmax-crossentropy)
         else:
+            # Otherwise, compute gradient using the full Softmax Jacobian to backpropagate through softmax outputs
+            # (see: https://tombolton.io/2018/08/25/softmax-back-propagation-solved-i-think/)
             dZ = dZ_or_Y_true
             softmax_output = self.cache_output
-            return softmax_output * (dZ - np.sum(dZ * softmax_output, axis=-1, keepdims=True))
+            # Softmax Jacobian: ∂σ_i/∂x_j = σ_i(δ_ij - σ_j)
+            return softmax_output * (dZ - np.sum(dZ * softmax_output, axis=-1, keepdims=True))  # ∂L/∂x_i = σ_i(∂L/∂σ_i - Σ_j ∂L/∂σ_j·σ_j)
 
     def params(self):
         return {}
@@ -33,23 +37,20 @@ class Softmax(Module):
         return {}
 
 
-class GELU(Module):
+class ReLU(Module):
     def __init__(self):
         super().__init__()
         self.cache_input = None
 
     def forward(self, X):
         self.cache_input = X
-        return 0.5 * X * (1 + np.tanh(np.sqrt(2 / np.pi) * (X + 0.044715 * X**3)))
+        return np.maximum(0, X)  # ReLU(x) = max(0, x)
 
     def backward(self, dZ):
         X = self.cache_input
-        tanh_arg = np.sqrt(2 / np.pi) * (X + 0.044715 * X**3)
-        tanh_val = np.tanh(tanh_arg)
-        sech2_val = 1 - tanh_val**2
-
-        grad = 0.5 * (1 + tanh_val) + 0.5 * X * sech2_val * np.sqrt(2 / np.pi) * (1 + 3 * 0.044715 * X**2)
-        return dZ * grad
+        # ReLU derivative: 1 if x > 0, else 0
+        grad = (X > 0).astype(np.float32)  # ∂ReLU/∂x = 1 if x > 0, else 0
+        return dZ * grad  # ∂L/∂x = ∂L/∂ReLU · ∂ReLU/∂x
 
     def params(self):
         return {}
@@ -58,40 +59,21 @@ class GELU(Module):
         return {}
 
 
-class SwiGLU(Module):
-    def __init__(self):
+class LeakyReLU(Module):
+    def __init__(self, alpha=0.01):
         super().__init__()
-        self.cache = {}
+        self.alpha = alpha
+        self.cache_input = None
 
     def forward(self, X):
-        gate, value = np.split(X, 2, axis=-1)
-        swish_gate = gate * self._sigmoid(gate)
-        output = swish_gate * value
-
-        self.cache = {
-            'gate': gate,
-            'value': value,
-            'swish_gate': swish_gate,
-            'sigmoid_gate': self._sigmoid(gate)
-        }
-
-        return output
+        self.cache_input = X
+        return np.where(X > 0, X, self.alpha * X)  # LeakyReLU(x) = max(αx, x)
 
     def backward(self, dZ):
-        gate = self.cache['gate']
-        value = self.cache['value']
-        swish_gate = self.cache['swish_gate']
-        sigmoid_gate = self.cache['sigmoid_gate']
-
-        dvalue = dZ * swish_gate
-        dswish_gate = dZ * value
-
-        dgate = dswish_gate * (sigmoid_gate + gate * sigmoid_gate * (1 - sigmoid_gate))
-
-        return np.concatenate([dgate, dvalue], axis=-1)
-
-    def _sigmoid(self, X):
-        return 1 / (1 + np.exp(-np.clip(X, -500, 500)))
+        X = self.cache_input
+        # LeakyReLU derivative: 1 if x > 0, else α
+        grad = np.where(X > 0, 1.0, self.alpha)  # ∂LeakyReLU/∂x = 1 if x > 0, else α
+        return dZ * grad  # ∂L/∂x = ∂L/∂LeakyReLU · ∂LeakyReLU/∂x
 
     def params(self):
         return {}

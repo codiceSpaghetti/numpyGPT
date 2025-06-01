@@ -17,15 +17,19 @@ class TransformerBlock(Module):
         self.ln2 = LayerNorm(d_model)
 
     def forward(self, X, mask=None):
-        attn_out = self.attn(self.ln1(X), mask)
-        X = X + attn_out
+        ln1_out = self.ln1(X)  # (B, T, C)
+        attn_out = self.attn(ln1_out, mask)  # (B, T, C)
+        X = X + attn_out  # (B, T, C)
 
-        ffn_out = self.ffn(self.ln2(X))
-        X = X + ffn_out
+        ln2_out = self.ln2(X)  # (B, T, C)
+        ffn_out = self.ffn(ln2_out)  # (B, T, C)
+        X = X + ffn_out  # (B, T, C)
 
         return X
 
     def backward(self, dZ):
+        # Residual: y = x + f(x), so ∂L/∂x = ∂L/∂y + ∂L/∂f(x) · ∂f/∂x
+
         dffn_out = dZ.copy()
         dX1 = dZ.copy()
 
@@ -33,7 +37,7 @@ class TransformerBlock(Module):
         dln2_out = dffn_in
         dX2 = self.ln2.backward(dln2_out)
 
-        dX1 += dX2
+        dX1 += dX2  # Sum both paths
 
         dattn_out = dX1.copy()
         dX3 = dX1.copy()
@@ -42,7 +46,7 @@ class TransformerBlock(Module):
         dln1_out = dattn_in
         dX4 = self.ln1.backward(dln1_out)
 
-        dX3 += dX4
+        dX3 += dX4  # Sum both paths
 
         return dX3
 

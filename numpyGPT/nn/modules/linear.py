@@ -4,42 +4,50 @@ from .module import Module
 
 
 class Linear(Module):
-    def __init__(self, in_dim, out_dim):
+    def __init__(self, in_features, out_features):
         super().__init__()
-        self.W = np.random.randn(in_dim, out_dim) * np.sqrt(2. / in_dim)
-        self.b = np.zeros((out_dim,))
+        self.in_features = in_features
+        self.out_features = out_features
+
+        self.W = np.random.randn(in_features, out_features) * 0.02
+        self.b = np.zeros(out_features)
+
         self.dW = None
         self.db = None
         self.cache_input = None
-        self.input_shape = None
 
     def forward(self, X):
-        self.input_shape = X.shape
         self.cache_input = X
 
-        if X.ndim > 2:
-            X_reshaped = X.reshape(-1, X.shape[-1])
-            out = X_reshaped @ self.W + self.b
-            return out.reshape(*self.input_shape[:-1], -1)
+        if X.ndim == 3:
+            B, T, C = X.shape
+            X_reshaped = X.reshape(-1, C)  # (B*T, C)
+            out = X_reshaped @ self.W + self.b  # (B*T, out_features)
+            out = out.reshape(B, T, self.out_features)  # (B, T, out_features)
+            return out
         else:
-            return X @ self.W + self.b
+            out = X @ self.W + self.b  # (B, out_features)
+            return out
 
     def backward(self, dZ):
         X = self.cache_input
 
-        if X.ndim > 2:
-            X_reshaped = X.reshape(-1, X.shape[-1])
-            dZ_reshaped = dZ.reshape(-1, dZ.shape[-1])
+        if X.ndim == 3:
+            B, T, C = X.shape
+            X_reshaped = X.reshape(-1, C)
+            dZ_reshaped = dZ.reshape(-1, self.out_features)
 
-            self.dW = X_reshaped.T @ dZ_reshaped
-            self.db = np.sum(dZ_reshaped, axis=0)
-            dX = dZ_reshaped @ self.W.T
-            return dX.reshape(self.input_shape)
-        else:
-            self.dW = X.T @ dZ
-            self.db = np.sum(dZ, axis=0)
-            dX = dZ @ self.W.T
+            # Y = XW + b, so ∂Y/∂W = X^T, ∂Y/∂b = I, ∂Y/∂X = W^T
+            self.dW = X_reshaped.T @ dZ_reshaped  # ∂L/∂W = X^T @ ∂L/∂Y
+            self.db = np.sum(dZ_reshaped, axis=0)  # ∂L/∂b = Σ ∂L/∂Y
+
+            dX_reshaped = dZ_reshaped @ self.W.T  # ∂L/∂X = ∂L/∂Y @ W^T
+            dX = dX_reshaped.reshape(B, T, C)
             return dX
+        else:
+            self.dW = X.T @ dZ  # ∂L/∂W = X^T @ ∂L/∂Y
+            self.db = np.sum(dZ, axis=0)  # ∂L/∂b = Σ ∂L/∂Y
+            return dZ @ self.W.T  # ∂L/∂X = ∂L/∂Y @ W^T
 
     def params(self):
         return {"W": self.W, "b": self.b}

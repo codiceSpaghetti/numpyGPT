@@ -27,23 +27,23 @@ class GPT(Module):
         self.cache = {}
 
     def forward(self, X, targets=None):
-        B, T = X.shape
+        B, T = X.shape  # (B, T)
 
-        tok_emb = self.tok_emb(X)
-        X = self.pos_emb(tok_emb)
+        tok_emb = self.tok_emb(X)  # (B, T, C)
+        X = self.pos_emb(tok_emb)  # (B, T, C)
 
-        mask = self._create_causal_mask(T)
+        mask = self._create_causal_mask(T)  # (1, 1, T, T)
 
         for block in self.blocks:
-            X = block(X, mask)
+            X = block(X, mask)  # (B, T, C)
 
-        X = self.ln_f(X)
-        logits = self.lm_head(X)
+        X = self.ln_f(X)  # (B, T, C)
+        logits = self.lm_head(X)  # (B, T, vocab_size)
 
         if targets is not None:
-            probs = self.softmax(logits.reshape(-1, self.vocab_size))
-            probs = probs.reshape(B, T, self.vocab_size)
-            loss = cross_entropy_loss(probs.reshape(-1, self.vocab_size), targets.reshape(-1))
+            probs = self.softmax(logits.reshape(-1, self.vocab_size))  # (B*T, vocab_size)
+            probs = probs.reshape(B, T, self.vocab_size)  # (B, T, vocab_size)
+            loss = cross_entropy_loss(probs.reshape(-1, self.vocab_size), targets.reshape(-1))  # scalar
             self.cache = {'probs': probs, 'targets': targets, 'logits': logits}
             return logits, loss
 
@@ -53,7 +53,7 @@ class GPT(Module):
         probs, targets = self.cache['probs'], self.cache['targets']
         B, T, C = probs.shape
 
-        dlogits = self.softmax.backward(probs.reshape(-1, C), targets.reshape(-1))
+        dlogits = self.softmax.backward(probs.reshape(-1, C), targets.reshape(-1))  # ∂L/∂logits = ŷ - y
         dlogits = dlogits.reshape(B, T, C)
 
         dX = self.lm_head.backward(dlogits)
