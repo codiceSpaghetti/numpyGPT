@@ -9,7 +9,9 @@ class Linear(Module):
         self.in_features = in_features
         self.out_features = out_features
 
-        self.W = np.random.randn(in_features, out_features) * 0.02
+        # He/Kaiming initialization (https://arxiv.org/abs/1502.01852) for ReLU activations: scale = sqrt(2/fan_in)
+        scale = np.sqrt(2.0 / in_features)
+        self.W = np.random.randn(in_features, out_features) * scale
         self.b = np.zeros(out_features)
 
         self.dW = None
