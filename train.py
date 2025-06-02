@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import json
 import os
 import pickle
 import time
@@ -20,30 +21,36 @@ from numpyGPT.utils.vis import MetricsLogger
 
 data_dir = 'data/shakespeare_char_tokenized'
 out_dir = 'out'
-eval_interval = 500
-eval_iters = 10
-log_interval = 1
+eval_interval = 250
+eval_iters = 20
+log_interval = 10
 always_save_checkpoint = True
 resume = True
 
-batch_size = 8
-block_size = 256
-max_iters = 5000
-lr = 6e-4
-min_lr = 6e-5
+batch_size = 16
+block_size = 128
+max_iters = 8000
+lr = 3e-4
+min_lr = 3e-5
 device = 'cpu'
 
-n_layer = 6
-n_head = 6
-n_embd = 384
-dropout = 0.2
+n_layer = 4
+n_head = 4
+n_embd = 256
+dropout = 0.1
 
-warmup_iters = 1000
-lr_decay_iters = 5000
+warmup_iters = 800
+lr_decay_iters = 8000
 grad_clip = 1.0
 
-logger = setup_logger('train')
+config_keys = [k for k, v in globals().items() if not k.startswith('_') and isinstance(v, (int, float, bool, str))]
+config = {k: globals()[k] for k in config_keys}
+
 os.makedirs(out_dir, exist_ok=True)
+with open(os.path.join(out_dir, 'config.json'), 'w') as f:
+    json.dump(config, f, indent=2)
+
+logger = setup_logger('train')
 
 train_loader = DataLoader(data_dir, 'train', batch_size, block_size)
 val_loader = DataLoader(data_dir, 'val', batch_size, block_size)
@@ -58,6 +65,31 @@ optimizer = Adam([model], lr=lr)
 scheduler = WarmupCosineLR(optimizer, warmup_iters, lr_decay_iters, min_lr)
 monitor = TrainingMonitor(log_interval)
 metrics = MetricsLogger(os.path.join(out_dir, 'metrics.json'))
+
+
+def save_model(filepath, model, iter_num, val_loss=None, optimizer_state=None):
+    model_data = {
+        'model': model.params(),
+        'iter_num': iter_num,
+        'config': {
+            'vocab_size': vocab_size,
+            'max_len': block_size,
+            'd_model': n_embd,
+            'n_heads': n_head,
+            'n_layers': n_layer,
+            'd_ff': 4*n_embd,
+        }
+    }
+
+    if val_loss is not None:
+        model_data['val_loss'] = val_loss
+
+    if optimizer_state is not None:
+        model_data['optimizer_state'] = optimizer_state
+        model_data['best_val_loss'] = best_val_loss
+
+    with open(filepath, 'wb') as f:
+        pickle.dump(model_data, f)
 
 
 def estimate_loss():
@@ -120,29 +152,25 @@ while True:
         metrics.log(iter_num, val_loss=losses['val'], lr=get_lr(optimizer))
 
         if losses['val'] < best_val_loss or always_save_checkpoint:
-            best_val_loss = losses['val']
+            if losses['val'] < best_val_loss:
+                best_val_loss = losses['val']
+                should_save_best = True
+            else:
+                should_save_best = False
+
             if iter_num > 0:
-                checkpoint = {
-                    'model': model.params(),
-                    'optimizer_state': {
-                        'm': optimizer.m,
-                        'v': optimizer.v,
-                        't': optimizer.t
-                    },
-                    'iter_num': iter_num,
-                    'best_val_loss': best_val_loss,
-                    'config': {
-                        'vocab_size': vocab_size,
-                        'max_len': block_size,
-                        'd_model': n_embd,
-                        'n_heads': n_head,
-                        'n_layers': n_layer,
-                        'd_ff': 4*n_embd,
-                    }
+                optimizer_state = {
+                    'm': optimizer.m,
+                    'v': optimizer.v,
+                    't': optimizer.t
                 }
                 logger.info(f"saving checkpoint to {out_dir}")
-                with open(os.path.join(out_dir, 'ckpt.pkl'), 'wb') as f:
-                    pickle.dump(checkpoint, f)
+                save_model(os.path.join(out_dir, 'ckpt.pkl'), model, iter_num,
+                           optimizer_state=optimizer_state)
+
+                if should_save_best:
+                    save_model(os.path.join(out_dir, 'best_model.pkl'), model, iter_num,
+                               val_loss=losses['val'])
 
     optimizer.zero_grad()
 
