@@ -152,7 +152,7 @@ class TestSoftmax(unittest.TestCase):
 
         Y_onehot = np.zeros_like(Y_hat)
         Y_onehot[np.arange(Y_true.size), Y_true] = 1
-        expected_dX = Y_hat - Y_onehot
+        expected_dX = (Y_hat - Y_onehot) / batch_size
         self.assertTrue(np.allclose(dX, expected_dX))
 
         params = layer.params()
