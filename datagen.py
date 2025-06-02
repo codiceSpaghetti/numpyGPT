@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import argparse
 import os
 import pickle
@@ -58,8 +60,8 @@ def prepare_data(input_file, output_dir, tokenizer_type='char', train_split=0.9,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_file')
-    parser.add_argument('output_dir')
+    parser.add_argument('--input_file', default='data/shakespeare.txt', help='path to input text file')
+    parser.add_argument('--output_dir', default='data/shakespeare_char', help='output directory')
     parser.add_argument('--tokenizer_type', choices=['char', 'word', 'bpe'], default='char')
     parser.add_argument('--train_split', type=float, default=0.9)
     parser.add_argument('--min_freq', type=int, default=1)

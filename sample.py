@@ -54,12 +54,12 @@ def sample_from_model(model_path, data_dir, num_samples=1, max_new_tokens=500,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', default='out/ckpt.pkl')
-    parser.add_argument('--data_dir', default='data/shakespeare_char_tokenized')
+    parser.add_argument('--model_path', default='out/char/best_model.pkl')
+    parser.add_argument('--data_dir', default='data/shakespeare_char')
     parser.add_argument('--num_samples', type=int, default=1)
     parser.add_argument('--max_new_tokens', type=int, default=500)
     parser.add_argument('--temperature', type=float, default=0.8)
-    parser.add_argument('--start', default="\n")
+    parser.add_argument('--start', default="KING")
     parser.add_argument('--seed', type=int, default=1337)
     args = parser.parse_args()
 

@@ -19,7 +19,7 @@ from numpyGPT.utils.training import (
 )
 from numpyGPT.utils.vis import MetricsLogger
 
-data_dir = 'data/shakespeare_char_tokenized'
+data_dir = 'data/shakespeare_char'
 out_dir = 'out/char'
 eval_interval = 250
 eval_iters = 20
