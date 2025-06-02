@@ -3,7 +3,7 @@ from collections import Counter
 
 
 class WordTokenizer:
-    def __init__(self, min_freq=1, max_vocab_size=None, special_tokens=['<pad>', '<unk>']):
+    def __init__(self, min_freq=1, max_vocab_size=None, special_tokens=['<pad>', '<unk>', '<bos>', '<eos>']):
         self.min_freq = min_freq
         self.max_vocab_size = max_vocab_size
         self.special_tokens = special_tokens
@@ -51,8 +51,12 @@ class WordTokenizer:
     def encode(self, text):
         tokens = self.tokenize(text)
         indices = [self.word_to_idx.get(token, self.word_to_idx['<unk>']) for token in tokens]
-        return indices
+        return [self.word_to_idx['<bos>']] + indices
 
     def decode(self, indices):
         tokens = [self.idx_to_word.get(idx, '<unk>') for idx in indices]
+        if tokens and tokens[0] == '<bos>':
+            tokens = tokens[1:]
+        if tokens and tokens[-1] == '<eos>':
+            tokens = tokens[:-1]
         return ' '.join(tokens)

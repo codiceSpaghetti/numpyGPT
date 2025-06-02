@@ -2,7 +2,7 @@ from collections import Counter
 
 
 class CharTokenizer:
-    def __init__(self, special_tokens=['<pad>', '<unk>']):
+    def __init__(self, special_tokens=['<pad>', '<unk>', '<bos>', '<eos>']):
         self.special_tokens = special_tokens
         self.char_to_idx = {}
         self.idx_to_char = {}
@@ -42,8 +42,12 @@ class CharTokenizer:
     def encode(self, text):
         chars = self.tokenize(text)
         indices = [self.char_to_idx.get(char, self.char_to_idx['<unk>']) for char in chars]
-        return indices
+        return [self.char_to_idx['<bos>']] + indices
 
     def decode(self, indices):
         chars = [self.idx_to_char.get(idx, '<unk>') for idx in indices]
+        if chars and chars[0] == '<bos>':
+            chars = chars[1:]
+        if chars and chars[-1] == '<eos>':
+            chars = chars[:-1]
         return ''.join(chars)

@@ -37,10 +37,12 @@ def sample_from_model(model_path, data_dir, num_samples=1, max_new_tokens=500,
     start_ids = tokenizer.encode(start_text)
     x = np.array(start_ids, dtype=np.int64)[None, ...]
 
+    eos_token_id = tokenizer.char_to_idx.get('<eos>') or tokenizer.word_to_idx.get('<eos>') or tokenizer.token_to_idx.get('<eos>')
+
     logger.info(f"Generating {num_samples} samples...")
 
     for k in range(num_samples):
-        y = model.generate(x, max_new_tokens, temperature=temperature)
+        y = model.generate(x, max_new_tokens, temperature=temperature, eos_token_id=eos_token_id)
 
         print("\n" + "="*60)
         print(f"SAMPLE {k+1}/{num_samples}")

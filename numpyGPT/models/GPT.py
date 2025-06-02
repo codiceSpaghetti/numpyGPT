@@ -80,7 +80,7 @@ class GPT(Module):
         mask = np.triu(np.ones((T, T)), k=1) * -1e9
         return mask[None, None, :, :]
 
-    def generate(self, idx, max_new_tokens, temperature=1.0):
+    def generate(self, idx, max_new_tokens, temperature=1.0, eos_token_id=None):
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.max_len:]
             logits = self(idx_cond)
@@ -91,6 +91,9 @@ class GPT(Module):
 
             idx_next = np.array([[np.random.choice(self.vocab_size, p=probs[0])]])
             idx = np.concatenate([idx, idx_next], axis=1)
+
+            if eos_token_id is not None and idx_next[0, 0] == eos_token_id:
+                break
 
         return idx
 

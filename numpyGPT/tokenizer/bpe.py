@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 
 
 class BPETokenizer:
-    def __init__(self, vocab_size=1000, special_tokens=['<pad>', '<unk>']):
+    def __init__(self, vocab_size=1000, special_tokens=['<pad>', '<unk>', '<bos>', '<eos>']):
         self.vocab_size = vocab_size
         self.special_tokens = special_tokens
         self.token_to_idx = {}
@@ -125,9 +125,13 @@ class BPETokenizer:
             for token in word_tokens:
                 tokens.append(self.token_to_idx.get(token, self.token_to_idx['<unk>']))
 
-        return tokens
+        return [self.token_to_idx['<bos>']] + tokens
 
     def decode(self, indices):
         tokens = [self.idx_to_token.get(idx, '<unk>') for idx in indices]
+        if tokens and tokens[0] == '<bos>':
+            tokens = tokens[1:]
+        if tokens and tokens[-1] == '<eos>':
+            tokens = tokens[:-1]
         text = ''.join(tokens).replace('</w>', ' ').strip()
         return text
