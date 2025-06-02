@@ -135,3 +135,7 @@ class BPETokenizer:
             tokens = tokens[:-1]
         text = ''.join(tokens).replace('</w>', ' ').strip()
         return text
+
+    @property
+    def eos_token_id(self):
+        return self.token_to_idx['<eos>']

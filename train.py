@@ -20,7 +20,7 @@ from numpyGPT.utils.training import (
 from numpyGPT.utils.vis import MetricsLogger
 
 data_dir = 'data/shakespeare_char_tokenized'
-out_dir = 'out'
+out_dir = 'out/char'
 eval_interval = 250
 eval_iters = 20
 log_interval = 10
@@ -32,12 +32,10 @@ block_size = 128
 max_iters = 8000
 lr = 3e-4
 min_lr = 3e-5
-device = 'cpu'
 
 n_layer = 4
 n_head = 4
 n_embd = 256
-dropout = 0.1
 
 warmup_iters = 800
 lr_decay_iters = 8000

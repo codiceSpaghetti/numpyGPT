@@ -51,3 +51,7 @@ class CharTokenizer:
         if chars and chars[-1] == '<eos>':
             chars = chars[:-1]
         return ''.join(chars)
+
+    @property
+    def eos_token_id(self):
+        return self.char_to_idx['<eos>']

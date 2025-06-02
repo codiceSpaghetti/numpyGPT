@@ -18,17 +18,15 @@ def prepare_data(input_file, output_dir, tokenizer_type='char', train_split=0.9,
     print(f"Data length: {len(text):,} characters")
 
     if tokenizer_type == 'char':
-        tokenizer = CharTokenizer(special_tokens=['<pad>', '<unk>'])
+        tokenizer = CharTokenizer()
     elif tokenizer_type == 'word':
         tokenizer = WordTokenizer(
             min_freq=min_freq,
-            max_vocab_size=max_vocab_size,
-            special_tokens=['<pad>', '<unk>']
+            max_vocab_size=max_vocab_size
         )
     elif tokenizer_type == 'bpe':
         tokenizer = BPETokenizer(
-            vocab_size=vocab_size,
-            special_tokens=['<pad>', '<unk>']
+            vocab_size=vocab_size
         )
     else:
         raise ValueError(f"Unknown tokenizer type: {tokenizer_type}")

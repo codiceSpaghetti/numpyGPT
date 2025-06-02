@@ -60,3 +60,7 @@ class WordTokenizer:
         if tokens and tokens[-1] == '<eos>':
             tokens = tokens[:-1]
         return ' '.join(tokens)
+
+    @property
+    def eos_token_id(self):
+        return self.word_to_idx['<eos>']
