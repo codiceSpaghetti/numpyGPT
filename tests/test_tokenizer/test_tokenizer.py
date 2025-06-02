@@ -1,6 +1,8 @@
+import unittest
+
+from numpyGPT.tokenizer.bpe import BPETokenizer
 from numpyGPT.tokenizer.char_level import CharTokenizer
 from numpyGPT.tokenizer.word_level import WordTokenizer
-import unittest
 
 
 class TestCharTokenizer(unittest.TestCase):
@@ -138,6 +140,124 @@ class TestWordTokenizer(unittest.TestCase):
         self.assertIn('!', tokens)
         self.assertIn('hello', tokens)
         self.assertIn('world', tokens)
+
+
+class TestBPETokenizer(unittest.TestCase):
+
+    def setUp(self):
+        self.tokenizer = BPETokenizer(vocab_size=50)
+
+    def test_get_word_freqs_single_text(self):
+        text = "hello world hello"
+        word_freqs = self.tokenizer._get_word_freqs(text)
+        expected = {'hello': 2, 'world': 1}
+        self.assertEqual(word_freqs, expected)
+
+    def test_get_word_freqs_multiple_texts(self):
+        texts = ["hello world", "hello test"]
+        word_freqs = self.tokenizer._get_word_freqs(texts)
+        expected = {'hello': 2, 'world': 1, 'test': 1}
+        self.assertEqual(word_freqs, expected)
+
+    def test_get_pairs(self):
+        word = ['h', 'e', 'l', 'l', 'o']
+        pairs = self.tokenizer._get_pairs(word)
+        expected = {('h', 'e'), ('e', 'l'), ('l', 'l'), ('l', 'o')}
+        self.assertEqual(pairs, expected)
+
+    def test_build_vocab_learns_merges(self):
+        text = "hello hello hello world world"
+        self.tokenizer.build_vocab(text)
+
+        self.assertGreater(len(self.tokenizer.merges), 0)
+        self.assertIsInstance(self.tokenizer.merges[0], tuple)
+        self.assertEqual(len(self.tokenizer.merges[0]), 2)
+
+    def test_build_vocab_creates_mappings(self):
+        text = "hello world"
+        self.tokenizer.build_vocab(text)
+
+        self.assertGreater(len(self.tokenizer.token_to_idx), 0)
+        self.assertEqual(len(self.tokenizer.token_to_idx), len(self.tokenizer.idx_to_token))
+        self.assertEqual(self.tokenizer.vocab_size, len(self.tokenizer.token_to_idx))
+
+    def test_encode_decode_simple(self):
+        text = "hello world"
+        self.tokenizer.build_vocab(text)
+
+        encoded = self.tokenizer.encode(text)
+        decoded = self.tokenizer.decode(encoded)
+
+        self.assertEqual(decoded, text)
+
+    def test_encode_decode_repeated_words(self):
+        text = "hello hello world"
+        self.tokenizer.build_vocab(text)
+
+        encoded = self.tokenizer.encode(text)
+        decoded = self.tokenizer.decode(encoded)
+
+        self.assertEqual(decoded, text)
+
+    def test_unknown_tokens(self):
+        self.tokenizer.build_vocab("hello world")
+
+        encoded = self.tokenizer.encode("xyz unknown")
+        unk_idx = self.tokenizer.token_to_idx['<unk>']
+
+        self.assertIn(unk_idx, encoded)
+
+    def test_special_tokens_included(self):
+        text = "hello world"
+        self.tokenizer.build_vocab(text)
+
+        self.assertIn('<pad>', self.tokenizer.token_to_idx)
+        self.assertIn('<unk>', self.tokenizer.token_to_idx)
+
+    def test_vocab_size_constraint(self):
+        tokenizer = BPETokenizer(vocab_size=30)
+        text = "hello world test example quick brown fox jumps over lazy dog"
+        tokenizer.build_vocab(text)
+
+        self.assertLessEqual(tokenizer.vocab_size, 30)
+
+    def test_merges_applied_in_order(self):
+        text = "aaaa bbbb aaaa bbbb"
+        self.tokenizer.build_vocab(text)
+
+        word = "aaaa"
+        tokenized = self.tokenizer._tokenize_word(' '.join(list(word)))
+
+        self.assertIsInstance(tokenized, list)
+        self.assertGreater(len(tokenized), 0)
+
+    def test_word_boundary_preservation(self):
+        text = "hello world test"
+        self.tokenizer.build_vocab(text)
+
+        encoded = self.tokenizer.encode(text)
+        decoded = self.tokenizer.decode(encoded)
+
+        self.assertEqual(decoded, text)
+        self.assertIn(' ', decoded)
+
+    def test_empty_text(self):
+        self.tokenizer.build_vocab("hello world")
+
+        encoded = self.tokenizer.encode("")
+        decoded = self.tokenizer.decode(encoded)
+
+        self.assertEqual(encoded, [])
+        self.assertEqual(decoded, "")
+
+    def test_single_character_words(self):
+        text = "a b c d"
+        self.tokenizer.build_vocab(text)
+
+        encoded = self.tokenizer.encode(text)
+        decoded = self.tokenizer.decode(encoded)
+
+        self.assertEqual(decoded, text)
 
 
 if __name__ == '__main__':
