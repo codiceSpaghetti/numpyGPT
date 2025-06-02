@@ -5,16 +5,28 @@ import pickle
 import numpy as np
 
 from numpyGPT.tokenizer.char_level import CharTokenizer
+from numpyGPT.tokenizer.word_level import WordTokenizer
 
 
-def prepare_data(input_file, output_dir, train_split=0.9):
+def prepare_data(input_file, output_dir, tokenizer_type='char', train_split=0.9,
+                 min_freq=1, max_vocab_size=None):
     print(f"Reading {input_file}...")
     with open(input_file, 'r', encoding='utf-8') as f:
         text = f.read()
 
     print(f"Data length: {len(text):,} characters")
 
-    tokenizer = CharTokenizer(special_tokens=['<pad>', '<unk>'])
+    if tokenizer_type == 'char':
+        tokenizer = CharTokenizer(special_tokens=['<pad>', '<unk>'])
+    elif tokenizer_type == 'word':
+        tokenizer = WordTokenizer(
+            min_freq=min_freq,
+            max_vocab_size=max_vocab_size,
+            special_tokens=['<pad>', '<unk>']
+        )
+    else:
+        raise ValueError(f"Unknown tokenizer type: {tokenizer_type}")
+
     tokenizer.build_vocab(text)
 
     print(f"Vocab size: {tokenizer.vocab_size}")
@@ -44,7 +56,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file')
     parser.add_argument('output_dir')
+    parser.add_argument('--tokenizer_type', choices=['char', 'word'], default='char')
     parser.add_argument('--train_split', type=float, default=0.9)
+    parser.add_argument('--min_freq', type=int, default=1)
+    parser.add_argument('--max_vocab_size', type=int, default=None)
     args = parser.parse_args()
 
-    prepare_data(args.input_file, args.output_dir, args.train_split)
+    prepare_data(
+        args.input_file,
+        args.output_dir,
+        args.tokenizer_type,
+        args.train_split,
+        args.min_freq,
+        args.max_vocab_size
+    )
