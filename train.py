@@ -18,7 +18,7 @@ from numpyGPT.utils.training import (
 )
 from numpyGPT.utils.vis import MetricsLogger
 
-data_dir = 'data/shakespeare_'
+data_dir = 'data/shakespeare_char_tokenized'
 out_dir = 'out'
 eval_interval = 500
 eval_iters = 10
@@ -143,9 +143,6 @@ while True:
                 logger.info(f"saving checkpoint to {out_dir}")
                 with open(os.path.join(out_dir, 'ckpt.pkl'), 'wb') as f:
                     pickle.dump(checkpoint, f)
-
-    if iter_num == 0 and eval_interval == 0:
-        break
 
     optimizer.zero_grad()
 

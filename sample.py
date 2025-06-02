@@ -1,57 +1,79 @@
 #! /usr/bin/env python3
 
+import argparse
 import os
 import pickle
 
 import numpy as np
 
 from numpyGPT.models.GPT import GPT
-from numpyGPT.utils.data.dataloader import DataLoader
 from numpyGPT.utils.training import setup_logger
 
-out_dir = 'out'
-data_dir = 'data/shakespeare_'
-num_samples = 1
-max_new_tokens = 500
-temperature = 0.8
-top_k = 200
-seed = 1337
-start = "\n"
 
-logger = setup_logger('sample')
-np.random.seed(seed)
+def sample_from_model(model_path, data_dir, num_samples=1, max_new_tokens=500,
+                      temperature=0.8, start_text="\n", seed=1337):
+    logger = setup_logger('sample')
+    np.random.seed(seed)
 
-ckpt_path = os.path.join(out_dir, 'ckpt.pkl')
-logger.info(f"loading model from {ckpt_path}")
+    logger.info(f"Loading model from {model_path}")
+    with open(model_path, 'rb') as f:
+        checkpoint = pickle.load(f)
 
-with open(ckpt_path, 'rb') as f:
-    checkpoint = pickle.load(f)
+    config = checkpoint['config']
+    model = GPT(**config)
 
-config = checkpoint['config']
-logger.info(f"model config: {config}")
+    model_params = model.params()
+    for name, param in checkpoint['model'].items():
+        model_params[name][:] = param
 
-model = GPT(**config)
+    logger.info("Model loaded")
 
-model_params = model.params()
-for name, param in checkpoint['model'].items():
-    model_params[name][:] = param
+    tokenizer_path = os.path.join(data_dir, 'tokenizer.pkl')
+    with open(tokenizer_path, 'rb') as f:
+        tokenizer = pickle.load(f)
 
-logger.info(f"model loaded successfully")
+    logger.info(f"Vocab size: {tokenizer.vocab_size}")
 
-train_loader = DataLoader(data_dir, 'train', 1, 1)
+    start_ids = tokenizer.encode(start_text)
+    x = np.array(start_ids, dtype=np.int64)[None, ...]
 
-start_ids = train_loader.encode(start)
-x = np.array(start_ids, dtype=np.int64)[None, ...]
+    logger.info(f"Generating {num_samples} samples...")
 
-logger.info(f"generating {num_samples} samples with {max_new_tokens} tokens each")
-logger.info(f"temperature: {temperature}, start: '{start}'")
+    for k in range(num_samples):
+        y = model.generate(x, max_new_tokens, temperature=temperature)
 
-for k in range(num_samples):
-    logger.info(f"generating sample {k+1}/{num_samples}...")
-    y = model.generate(x, max_new_tokens, temperature=temperature)
+        print("\n" + "="*60)
+        print(f"SAMPLE {k+1}/{num_samples}")
+        print("="*60)
+        decoded_text = tokenizer.decode(y[0].tolist())
+        print(decoded_text)
+        print("="*60 + "\n")
 
-    print("\n" + "="*50)
-    print(f"SAMPLE {k+1}")
-    print("="*50)
-    print(train_loader.decode(y[0].tolist()))
-    print("="*50 + "\n")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_path', default='out/ckpt.pkl')
+    parser.add_argument('--data_dir', default='data/shakespeare_char_tokenized')
+    parser.add_argument('--num_samples', type=int, default=1)
+    parser.add_argument('--max_new_tokens', type=int, default=500)
+    parser.add_argument('--temperature', type=float, default=0.8)
+    parser.add_argument('--start', default="\n")
+    parser.add_argument('--seed', type=int, default=1337)
+    args = parser.parse_args()
+
+    if not os.path.exists(args.data_dir):
+        print(f"Data directory not found: {args.data_dir}")
+
+    if not os.path.exists(args.model_path):
+        print(f"Model checkpoint not found: {args.model_path}")
+        exit(1)
+
+    sample_from_model(
+        model_path=args.model_path,
+        data_dir=args.data_dir,
+        num_samples=args.num_samples,
+        max_new_tokens=args.max_new_tokens,
+        temperature=args.temperature,
+        start_text=args.start,
+        seed=args.seed
+    )

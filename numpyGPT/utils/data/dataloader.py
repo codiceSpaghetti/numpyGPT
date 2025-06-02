@@ -12,12 +12,11 @@ class DataLoader:
         data_bin = os.path.join(data_dir, f'{split}.bin')
         self.data = np.fromfile(data_bin, dtype=np.uint16)
 
-        with open(os.path.join(data_dir, 'meta.pkl'), 'rb') as f:
-            meta = pickle.load(f)
-        self.vocab_size = meta['vocab_size']
-        self.stoi = meta['stoi']
-        self.itos = meta['itos']
+        tokenizer_path = os.path.join(data_dir, 'tokenizer.pkl')
+        with open(tokenizer_path, 'rb') as f:
+            self.tokenizer = pickle.load(f)
 
+        self.vocab_size = self.tokenizer.vocab_size
         self.current_pos = 0
 
     def get_batch(self):
@@ -28,7 +27,7 @@ class DataLoader:
         return X.astype(np.int64), y.astype(np.int64)
 
     def encode(self, s):
-        return [self.stoi[c] for c in s]
+        return self.tokenizer.encode(s)
 
     def decode(self, l):
-        return ''.join([self.itos[i] for i in l])
+        return self.tokenizer.decode(l)

@@ -1,4 +1,3 @@
-from numpyGPT.utils.data import DataLoader
 import os
 import pickle
 import sys
@@ -7,7 +6,23 @@ import unittest
 
 import numpy as np
 
+from numpyGPT.utils.data import DataLoader
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+
+class MockTokenizer:
+    def __init__(self, vocab):
+        self.vocab = vocab
+        self.vocab_size = len(vocab)
+        self.stoi = {ch: i for i, ch in enumerate(vocab)}
+        self.itos = {i: ch for i, ch in enumerate(vocab)}
+
+    def encode(self, text):
+        return [self.stoi.get(ch, self.stoi.get('<unk>', 0)) for ch in text]
+
+    def decode(self, indices):
+        return ''.join([self.itos.get(idx, '<unk>') for idx in indices])
 
 
 class TestDataLoader(unittest.TestCase):
@@ -15,8 +30,6 @@ class TestDataLoader(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
 
         vocab = ['a', 'b', 'c', 'd', 'e']
-        stoi = {ch: i for i, ch in enumerate(vocab)}
-        itos = {i: ch for i, ch in enumerate(vocab)}
 
         train_data = np.array([0, 1, 2, 3, 4, 0, 1, 2, 3, 4] * 10, dtype=np.uint16)
         val_data = np.array([4, 3, 2, 1, 0, 4, 3, 2, 1, 0] * 5, dtype=np.uint16)
@@ -24,13 +37,9 @@ class TestDataLoader(unittest.TestCase):
         train_data.tofile(os.path.join(self.temp_dir, 'train.bin'))
         val_data.tofile(os.path.join(self.temp_dir, 'val.bin'))
 
-        meta = {
-            'vocab_size': len(vocab),
-            'stoi': stoi,
-            'itos': itos,
-        }
-        with open(os.path.join(self.temp_dir, 'meta.pkl'), 'wb') as f:
-            pickle.dump(meta, f)
+        tokenizer = MockTokenizer(vocab)
+        with open(os.path.join(self.temp_dir, 'tokenizer.pkl'), 'wb') as f:
+            pickle.dump(tokenizer, f)
 
     def test_init(self):
         loader = DataLoader(self.temp_dir, 'train', batch_size=4, block_size=8)
