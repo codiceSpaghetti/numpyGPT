@@ -21,7 +21,9 @@ class Softmax(Module):
             Y = np.zeros_like(Y_hat)
             Y[np.arange(Y_true.size), Y_true] = 1
             # CrossEntropy + Softmax derivative simplifies beautifully to:
-            return Y_hat - Y  # ∂(CE○Softmax)/∂x = ŷ - y  (see: https://www.parasdahal.com/softmax-crossentropy)
+            # Note: PyTorch's cross_entropy averages over batch, so we need to divide by batch size
+            batch_size = Y_hat.shape[0]
+            return (Y_hat - Y) / batch_size  # ∂(CE○Softmax)/∂x = (ŷ - y) / N  (see: https://www.parasdahal.com/softmax-crossentropy)
         else:
             # Otherwise, compute gradient using the full Softmax Jacobian to backpropagate through softmax outputs
             # (see: https://tombolton.io/2018/08/25/softmax-back-propagation-solved-i-think/)
