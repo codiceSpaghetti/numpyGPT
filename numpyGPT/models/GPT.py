@@ -1,7 +1,6 @@
 import numpy as np
 
 from ..nn.functional import cross_entropy_loss
-from ..nn.modules.activation import Softmax
 from ..nn.modules.embedding import Embedding
 from ..nn.modules.layerNorm import LayerNorm
 from ..nn.modules.linear import Linear
@@ -22,7 +21,6 @@ class GPT(Module):
         self.blocks = [TransformerBlock(d_model, n_heads, d_ff) for _ in range(n_layers)]
         self.ln_f = LayerNorm(d_model)
         self.lm_head = Linear(d_model, vocab_size)
-        self.softmax = Softmax()
 
         self.cache = {}
 
@@ -41,19 +39,28 @@ class GPT(Module):
         logits = self.lm_head(X)  # (B, T, vocab_size)
 
         if targets is not None:
-            probs = self.softmax(logits.reshape(-1, self.vocab_size))  # (B*T, vocab_size)
-            probs = probs.reshape(B, T, self.vocab_size)  # (B, T, vocab_size)
-            loss = cross_entropy_loss(probs.reshape(-1, self.vocab_size), targets.reshape(-1))  # scalar
-            self.cache = {'probs': probs, 'targets': targets, 'logits': logits}
+            loss = cross_entropy_loss(logits.reshape(-1, self.vocab_size), targets.reshape(-1))
+            self.cache = {'logits': logits, 'targets': targets}
             return logits, loss
 
         return logits
 
     def backward(self):
-        probs, targets = self.cache['probs'], self.cache['targets']
-        B, T, C = probs.shape
+        logits, targets = self.cache['logits'], self.cache['targets']
+        B, T, C = logits.shape
 
-        dlogits = self.softmax.backward(probs.reshape(-1, C), targets.reshape(-1))  # ∂L/∂logits = ŷ - y
+        # d(CE)/d(logits) = softmax - one_hot
+        logits_reshaped = logits.reshape(-1, C)
+        targets_reshaped = targets.reshape(-1)
+
+        logits_max = np.max(logits_reshaped, axis=-1, keepdims=True)
+        exp_logits = np.exp(logits_reshaped - logits_max)
+        probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
+
+        dlogits = probs
+        dlogits[np.arange(len(targets_reshaped)), targets_reshaped] -= 1
+        dlogits /= len(targets_reshaped)
+
         dlogits = dlogits.reshape(B, T, C)
 
         dX = self.lm_head.backward(dlogits)
