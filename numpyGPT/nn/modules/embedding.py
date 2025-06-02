@@ -23,10 +23,7 @@ class Embedding(Module):
         X = self.cache_input
 
         # out[i,j] = W[X[i,j]], so ∂L/∂W[k] = Σ_{i,j: X[i,j]=k} ∂L/∂out[i,j]
-        for i in range(X.shape[0]):
-            for j in range(X.shape[1]):
-                idx = X[i, j]
-                self.dW[idx] += dZ[i, j]  # Accumulate gradients for each token occurrence
+        np.add.at(self.dW, X.flatten(), dZ.reshape(-1, self.embed_dim))
 
     def params(self):
         return {"W": self.W}
