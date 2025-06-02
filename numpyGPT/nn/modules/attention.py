@@ -6,6 +6,10 @@ from .module import Module
 
 
 class MultiHeadAttention(Module):
+    """
+    Multi-Head Attention (Attention is All You Need <3): https://arxiv.org/abs/1706.03762
+    """
+
     def __init__(self, d_model, n_heads):
         super().__init__()
         assert d_model % n_heads == 0

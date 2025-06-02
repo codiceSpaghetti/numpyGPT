@@ -4,6 +4,10 @@ from .lr_scheduler import LRScheduler
 
 
 class WarmupCosineLR(LRScheduler):
+    """
+    Cosine Learning Rate Scheduler: https://arxiv.org/abs/1608.03983
+    """
+
     def __init__(self, optimizer, warmup_iters, lr_decay_iters, min_lr, last_epoch=-1):
         self.warmup_iters = warmup_iters
         self.lr_decay_iters = lr_decay_iters

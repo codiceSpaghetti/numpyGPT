@@ -9,8 +9,13 @@ class Linear(Module):
         self.in_features = in_features
         self.out_features = out_features
 
-        # He/Kaiming initialization (https://arxiv.org/abs/1502.01852) for ReLU activations: scale = sqrt(2/fan_in)
+        # Xavier/Glorot, Best for tanh/sigmoid, https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
+        # He/Kaiming, Best for ReLU/LeakyReLU, https://arxiv.org/abs/1502.01852
+        # Lecun, Best for linear activations or SELU, https://arxiv.org/abs/2406.00348
+
+        # Using He/Kaiming since we have ReLU and LeakyReLU activations
         scale = np.sqrt(2.0 / in_features)
+
         self.W = np.random.randn(in_features, out_features) * scale
         self.b = np.zeros(out_features)
 
