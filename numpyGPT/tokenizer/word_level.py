@@ -1,66 +1,91 @@
 import re
-from collections import Counter
 
 
 class WordTokenizer:
-    def __init__(self, min_freq=1, max_vocab_size=None, special_tokens=['<pad>', '<unk>', '<bos>', '<eos>']):
+    def __init__(self, min_freq=1, max_vocab_size=None):
         self.min_freq = min_freq
         self.max_vocab_size = max_vocab_size
-        self.special_tokens = special_tokens
-        self.word_to_idx = {}
-        self.idx_to_word = {}
-        self.vocab_size = 0
+        self.words = []
+        self.stoi = {}
+        self.itos = {}
 
-    def tokenize(self, text):
-        tokens = re.findall(r"\b\w+\b|[^\s\w]", text)
-        tokens = [token.lower() for token in tokens]
-        return tokens
+    def build_vocab(self, text):
+        text = text.replace('\n', ' <|newline|> ')
+        text = text.replace('\t', ' <|tab|> ')
+        text = text.replace('\r', ' <|carriage_return|> ')
 
-    def build_vocab(self, texts):
-        if isinstance(texts, str):
-            texts = [texts]
+        tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
+        tokens = [token.lower() if not (token.startswith('<|') and token.endswith('|>')) else token for token in tokens]
 
-        all_tokens = []
-        for text in texts:
-            all_tokens.extend(self.tokenize(text))
+        word_counts = {}
+        for token in tokens:
+            word_counts[token] = word_counts.get(token, 0) + 1
 
-        token_counts = Counter(all_tokens)
-        sorted_tokens = sorted(token_counts.items(), key=lambda x: (-x[1], x[0]))
+        filtered_words = [word for word, count in word_counts.items() if count >= self.min_freq]
+        sorted_words = sorted(filtered_words, key=lambda x: (-word_counts[x], x))
 
-        if self.max_vocab_size is not None:
-            sorted_tokens = sorted_tokens[:self.max_vocab_size - len(self.special_tokens)]
+        if self.max_vocab_size:
+            sorted_words = sorted_words[:self.max_vocab_size - 4]
 
-        sorted_tokens = [token for token, count in sorted_tokens if count >= self.min_freq]
+        self.words = ['<pad>', '<unk>', '<bos>', '<eos>'] + sorted_words
+        self.stoi = {word: i for i, word in enumerate(self.words)}
+        self.itos = {i: word for i, word in enumerate(self.words)}
 
-        idx = 0
-        self.word_to_idx = {}
-        self.idx_to_word = {}
+    def encode(self, text, add_bos=True, add_eos=True):
+        text = text.replace('\n', ' <|newline|> ')
+        text = text.replace('\t', ' <|tab|> ')
+        text = text.replace('\r', ' <|carriage_return|> ')
 
-        for token in self.special_tokens:
-            self.word_to_idx[token] = idx
-            self.idx_to_word[idx] = token
-            idx += 1
+        tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
+        tokens = [token.lower() if not (token.startswith('<|') and token.endswith('|>')) else token for token in tokens]
 
-        for token in sorted_tokens:
-            self.word_to_idx[token] = idx
-            self.idx_to_word[idx] = token
-            idx += 1
+        indices = [self.stoi.get(token, 1) for token in tokens]
+        if add_bos:
+            indices = [2] + indices
+        if add_eos:
+            indices = indices + [3]
+        return indices
 
-        self.vocab_size = len(self.word_to_idx)
+    def decode(self, tokens):
+        words = [self.itos[t] for t in tokens if t in self.itos]
 
-    def encode(self, text):
-        tokens = self.tokenize(text)
-        indices = [self.word_to_idx.get(token, self.word_to_idx['<unk>']) for token in tokens]
-        return [self.word_to_idx['<bos>']] + indices
+        for special in ['<bos>', '<eos>', '<pad>', '<unk>']:
+            while special in words:
+                words.remove(special)
 
-    def decode(self, indices):
-        tokens = [self.idx_to_word.get(idx, '<unk>') for idx in indices]
-        if tokens and tokens[0] == '<bos>':
-            tokens = tokens[1:]
-        if tokens and tokens[-1] == '<eos>':
-            tokens = tokens[:-1]
-        return ' '.join(tokens)
+        result = []
+        for i, word in enumerate(words):
+            if word == '<|newline|>':
+                result.append('\n')
+            elif word == '<|tab|>':
+                result.append('\t')
+            elif word == '<|carriage_return|>':
+                result.append('\r')
+            else:
+                result.append(word)
+                if i < len(words) - 1:
+                    next_word = words[i + 1]
+                    if not next_word.startswith('<|') and next_word not in '.,;!?)"':
+                        result.append(' ')
+
+        text = ''.join(result)
+        text = re.sub(r' +', ' ', text)
+        text = re.sub(r" ([.,;!?)])", r'\1', text)
+        text = re.sub(r" ' ([st])", r"'\1", text)
+        text = re.sub(r"([a-z]) :", r'\1:', text)
+        text = re.sub(r' *\n *', '\n', text)
+        text = re.sub(r' *\t *', '\t', text)
+        text = re.sub(r' *\r *', '\r', text)
+        return text.strip()
+
+    @property
+    def vocab_size(self):
+        return len(self.words)
 
     @property
     def eos_token_id(self):
-        return self.word_to_idx['<eos>']
+        return 3
+
+    @property
+    def bos_token_id(self):
+        return 2

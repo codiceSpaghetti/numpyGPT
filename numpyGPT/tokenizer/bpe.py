@@ -3,9 +3,8 @@ from collections import Counter, defaultdict
 
 
 class BPETokenizer:
-    def __init__(self, vocab_size=1000, special_tokens=['<pad>', '<unk>', '<bos>', '<eos>']):
+    def __init__(self, vocab_size=1000):
         self.vocab_size = vocab_size
-        self.special_tokens = special_tokens
         self.token_to_idx = {}
         self.idx_to_token = {}
         self.merges = []
@@ -16,7 +15,9 @@ class BPETokenizer:
 
         word_freqs = Counter()
         for text in texts:
-            words = re.findall(r'\S+', text)
+            text = text.replace('\n', ' <|newline|> ')
+            text = text.replace('\t', ' <|tab|> ')
+            words = text.split()
             for word in words:
                 word_freqs[word] += 1
         return word_freqs
@@ -43,24 +44,32 @@ class BPETokenizer:
 
         vocab = {}
         for word, freq in word_freqs.items():
-            vocab[' '.join(list(word)) + ' </w>'] = freq
+            if word.startswith('<|') and word.endswith('|>'):
+                vocab[word + ' </w>'] = freq
+            else:
+                vocab[' '.join(list(word)) + ' </w>'] = freq
 
         base_vocab = set()
         for word in vocab.keys():
-            for token in word.split():
-                base_vocab.add(token)
+            tokens = word.split()
+            for token in tokens:
+                if not (token.startswith('<|') and '|>' in token):
+                    base_vocab.add(token)
+                else:
+                    base_vocab.add(token)
 
-        vocab_tokens = list(base_vocab)
-        vocab_tokens.sort()
+        vocab_tokens = sorted(list(base_vocab))
 
-        num_merges = self.vocab_size - len(self.special_tokens) - len(vocab_tokens)
+        special_tokens = ['<pad>', '<unk>', '<bos>', '<eos>']
+        available_for_merges = max(0, self.vocab_size - len(special_tokens) - len(vocab_tokens))
 
-        for i in range(num_merges):
+        for i in range(available_for_merges):
             pairs = defaultdict(int)
             for word, freq in vocab.items():
                 word_pairs = self._get_pairs(word.split())
                 for pair in word_pairs:
-                    pairs[pair] += freq
+                    if not any(p.startswith('<|') and '|>' in p for p in pair):
+                        pairs[pair] += freq
 
             if not pairs:
                 break
@@ -69,15 +78,20 @@ class BPETokenizer:
             vocab = self._merge_vocab(best_pair, vocab)
             self.merges.append(best_pair)
 
-        all_tokens = self.special_tokens + vocab_tokens
+        all_tokens = special_tokens + vocab_tokens
         for pair in self.merges:
             all_tokens.append(''.join(pair))
+
+        all_tokens = all_tokens[:self.vocab_size]
 
         self.token_to_idx = {token: idx for idx, token in enumerate(all_tokens)}
         self.idx_to_token = {idx: token for token, idx in self.token_to_idx.items()}
         self.vocab_size = len(self.token_to_idx)
 
     def _tokenize_word(self, word):
+        if word.startswith('<|') and word.endswith('|>'):
+            return [word, '</w>']
+
         word = word.split() + ['</w>']
         pairs = self._get_pairs(word)
 
@@ -117,23 +131,44 @@ class BPETokenizer:
         return word
 
     def encode(self, text):
-        words = re.findall(r'\S+', text)
+        text = text.replace('\n', ' <|newline|> ')
+        text = text.replace('\t', ' <|tab|> ')
+        words = text.split()
         tokens = []
 
         for word in words:
-            word_tokens = self._tokenize_word(' '.join(list(word)))
+            word_tokens = self._tokenize_word(word if word.startswith('<|') and word.endswith('|>') else ' '.join(list(word)))
             for token in word_tokens:
                 tokens.append(self.token_to_idx.get(token, self.token_to_idx['<unk>']))
 
-        return [self.token_to_idx['<bos>']] + tokens
+        return tokens
 
     def decode(self, indices):
         tokens = [self.idx_to_token.get(idx, '<unk>') for idx in indices]
-        if tokens and tokens[0] == '<bos>':
-            tokens = tokens[1:]
-        if tokens and tokens[-1] == '<eos>':
-            tokens = tokens[:-1]
-        text = ''.join(tokens).replace('</w>', ' ').strip()
+
+        result = []
+        for i, token in enumerate(tokens):
+            if token.startswith('<|') and token.endswith('|>'):
+                if token == '<|newline|>':
+                    result.append('\n')
+                elif token == '<|tab|>':
+                    result.append('\t')
+                else:
+                    result.append(token)
+            else:
+                if token.endswith('</w>'):
+                    word_part = token[:-4]
+                    result.append(word_part)
+                    if i < len(tokens) - 1:
+                        result.append(' ')
+                else:
+                    result.append(token)
+
+        text = ''.join(result)
+        text = re.sub(r' +', ' ', text)
+        text = re.sub(r' *\n *', '\n', text)
+        text = re.sub(r' *\t *', '\t', text)
+        text = text.strip()
         return text
 
     @property

@@ -98,7 +98,7 @@ def estimate_loss():
         losses = np.zeros(eval_iters)
         for k in range(eval_iters):
             X, Y = loader.get_batch()
-            logits, loss = model(X, Y)
+            _, loss = model(X, Y)
             losses[k] = loss
         out[split] = losses.mean()
     model.train()

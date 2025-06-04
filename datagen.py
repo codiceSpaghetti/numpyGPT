@@ -12,7 +12,7 @@ from numpyGPT.tokenizer.word_level import WordTokenizer
 
 
 def prepare_data(input_file, output_dir, tokenizer_type='char', train_split=0.9,
-                 min_freq=1, max_vocab_size=None, vocab_size=1000):
+                 min_freq=1, max_vocab_size=1000):
     print(f"Reading {input_file}...")
     with open(input_file, 'r', encoding='utf-8') as f:
         text = f.read()
@@ -28,7 +28,7 @@ def prepare_data(input_file, output_dir, tokenizer_type='char', train_split=0.9,
         )
     elif tokenizer_type == 'bpe':
         tokenizer = BPETokenizer(
-            vocab_size=vocab_size
+            vocab_size=max_vocab_size
         )
     else:
         raise ValueError(f"Unknown tokenizer type: {tokenizer_type}")
@@ -66,7 +66,6 @@ if __name__ == '__main__':
     parser.add_argument('--train_split', type=float, default=0.9)
     parser.add_argument('--min_freq', type=int, default=1)
     parser.add_argument('--max_vocab_size', type=int, default=None)
-    parser.add_argument('--vocab_size', type=int, default=1000)
     args = parser.parse_args()
 
     prepare_data(
@@ -75,6 +74,5 @@ if __name__ == '__main__':
         args.tokenizer_type,
         args.train_split,
         args.min_freq,
-        args.max_vocab_size,
-        args.vocab_size
+        args.max_vocab_size
     )
