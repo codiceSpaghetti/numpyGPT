@@ -14,6 +14,10 @@ class WordTokenizer:
         text = text.replace('\t', ' <|tab|> ')
         text = text.replace('\r', ' <|carriage_return|> ')
 
+        # Tokenize text into:
+        # 1. Special tokens with format <|...|>   -> <\|[^|]+\|>
+        # 2. Words (alphanumerics/underscores)    -> \b\w+\b
+        # 3. Punctuation/non-word characters      -> [^\s\w]
         tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
         tokens = [token.lower() if not (token.startswith('<|') and token.endswith('|>')) else token for token in tokens]
 
@@ -22,7 +26,7 @@ class WordTokenizer:
             word_counts[token] = word_counts.get(token, 0) + 1
 
         filtered_words = [word for word, count in word_counts.items() if count >= self.min_freq]
-        sorted_words = sorted(filtered_words, key=lambda x: (-word_counts[x], x))
+        sorted_words = sorted(filtered_words, key=lambda x: (-word_counts[x], x))  # sort by frequency, then alphabetically
 
         if self.max_vocab_size:
             sorted_words = sorted_words[:self.max_vocab_size - 4]
@@ -39,7 +43,7 @@ class WordTokenizer:
         tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
         tokens = [token.lower() if not (token.startswith('<|') and token.endswith('|>')) else token for token in tokens]
 
-        indices = [self.stoi.get(token, 1) for token in tokens]
+        indices = [self.stoi.get(token, 1) for token in tokens]  # 1 is the index of <unk>
         if add_bos:
             indices = [2] + indices
         if add_eos:
@@ -65,13 +69,13 @@ class WordTokenizer:
                 result.append(word)
                 if i < len(words) - 1:
                     next_word = words[i + 1]
-                    if not next_word.startswith('<|') and next_word not in '.,;!?)"':
+                    if not next_word.startswith('<|') and next_word not in '\'.,;!?)"':
                         result.append(' ')
 
         text = ''.join(result)
         text = re.sub(r' +', ' ', text)
-        text = re.sub(r" ([.,;!?)])", r'\1', text)
-        text = re.sub(r" ' ([st])", r"'\1", text)
+        text = re.sub(r" ([\'.,;!?)])", r'\1', text)
+        text = re.sub(r"\b([A-Za-z]+) ?' ?(ll|re|ve|d|s|t|m)\b", r"\1'\2", text)
         text = re.sub(r"([a-z]) :", r'\1:', text)
         text = re.sub(r' *\n *', '\n', text)
         text = re.sub(r' *\t *', '\t', text)
