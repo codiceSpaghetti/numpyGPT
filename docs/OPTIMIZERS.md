@@ -1,16 +1,16 @@
-# Optimizers: How Neural Networks Learn
+# optimizers: how neural networks learn
 
-*Turning gradients into better weights*
+*Turning gradients into better weights.*
 
-## The Problem
+## the problem
 
-You have gradients. They point in the direction of steepest increase. You want to minimize loss. So you move in the opposite direction. But how far? How fast? 
+You have gradients. They point in the direction of steepest loss increase. You want to minimize loss. So you move in the opposite direction. But how far? How fast? 
 
 Naive approach: `weights -= learning_rate * gradients`
 
 This works, but slowly. Modern optimizers are smarter.
 
-## SGD: The Foundation
+## SGD: the foundation
 
 ```python
 class SGD:
@@ -34,7 +34,7 @@ class SGD:
 - Gets stuck in narrow valleys
 - Oscillates around optimal points
 
-## Adam: Adaptive Moments
+## Adam: adaptive moments
 
 Adam tracks two moving averages:
 - **Momentum** (first moment): direction of gradients
@@ -73,7 +73,7 @@ class Adam:
                 params[param_key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 ```
 
-## Why Adam Works
+## why Adam works
 
 **Momentum (`m`):** Smooths gradients. Builds velocity in consistent directions.
 ```python
@@ -96,16 +96,16 @@ v̂ = v / (1 - β₂ᵗ)
 θ = θ - lr * m̂ / (√v̂ + ε)
 ```
 
-## The Intuition
+## the intuition
 
-**SGD:** Walk downhill with fixed step size.
+**SGD:** Walk with fixed step size.
 
 **Adam:** 
 - Walk in the average direction you've been going (momentum)
 - Take smaller steps where the path is steep (adaptive learning rate)
 - Correct for startup effects (bias correction)
 
-## Hyperparameters
+## hyperparameters
 
 **Learning rate (`lr`):** How big steps to take
 - Too high: overshoots, unstable
@@ -124,7 +124,7 @@ v̂ = v / (1 - β₂ᵗ)
 - Prevents division by zero
 - Typical: 1e-8
 
-## Learning Rate Scheduling
+## learning rate scheduling
 
 Fixed learning rates are suboptimal. Common schedules:
 
@@ -144,14 +144,14 @@ else:
 lr = base_lr * gamma ** (step // step_size)
 ```
 
-## Comparison
+## comparison
 
 | Optimizer | Memory | Convergence | Hyperparams | Use Case |
 |-----------|---------|-------------|-------------|----------|
 | SGD       | None    | Slow, noisy | 1 (lr)      | Simple problems |
 | Adam      | 2x params | Fast, stable | 4 (lr, β₁, β₂, ε) | Most deep learning |
 
-## Implementation Pattern
+## implementation pattern
 
 All optimizers follow this interface:
 

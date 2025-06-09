@@ -1,42 +1,42 @@
 # Tokenizers: From Text to Numbers
 
-*How neural networks understand language*
+*How neural networks understand language.*
 
-## The Problem
+## the problem
 
 Neural networks work with numbers. Text is strings. You need to convert "Hello world" into `[1, 42, 7]` somehow. But which conversion? 
 
-Character-level: `['H','e','l','l','o',' ','w','o','r','l','d']`
-Word-level: `['Hello', 'world']`  
-BPE: `['Hel', 'lo', 'world']`
+* Character-level: `['H','e','l','l','o',' ','w','o','r','l','d']`
+* Word-level: `['Hello', 'world']`  
+* BPE: `['Hel', 'lo', 'world']`
 
 Each choice shapes what your model learns.
 
-## Character-Level: Simple and Universal
+## character-level: simple and universal
 
 ```python
 class CharTokenizer:
     def __init__(self):
-        self.char_to_idx = {}
-        self.idx_to_char = {}
+        self.stoi = {}
+        self.itos = {}
         
     def build_vocab(self, texts):
         chars = set(''.join(texts))
         for i, char in enumerate(sorted(chars)):
-            self.char_to_idx[char] = i
-            self.idx_to_char[i] = char
+            self.stoi[char] = i
+            self.itos[i] = char
             
     def encode(self, text):
-        return [self.char_to_idx[char] for char in text]
+        return [self.stoi[char] for char in text]
         
     def decode(self, indices):
-        return ''.join(self.idx_to_char[i] for i in indices)
+        return ''.join(self.itos[i] for i in indices)
 ```
 
-**Pros:** Never sees unknown words. Works for any language.
+**Pros:** Never sees unknown words. Works for any language.<br>
 **Cons:** Long sequences. Hard to learn word meanings.
 
-## Word-Level: Semantic Units
+## word-level: semantic units
 
 ```python
 class WordTokenizer:
@@ -53,10 +53,10 @@ class WordTokenizer:
                 if count >= self.min_freq]
 ```
 
-**Pros:** Captures word meanings. Shorter sequences.
+**Pros:** Captures word meanings. Shorter sequences.<br>
 **Cons:** Large vocabularies. Unknown words become `<unk>`.
 
-## BPE: Best of Both Worlds
+## bpe: best of both worlds
 
 Start with characters. Merge frequent pairs iteratively.
 
@@ -103,15 +103,15 @@ Merge: {'he ll o </w>': 2, 'w o r l d </w>': 1}
 Continue until vocab_size reached...
 ```
 
-## The Three Approaches Compared
+## the three approaches compared
 
-| Method | Vocab Size | Sequence Length | Unknown Words | Use Case |
-|--------|------------|-----------------|---------------|----------|
-| Char   | ~100       | Very Long       | Never         | Small data, multilingual |
-| Word   | ~50,000    | Short           | Common        | Large vocab, semantic tasks |
-| BPE    | ~1,000     | Medium          | Rare          | Production systems |
+| Method | Sequence Length | Unknown Words | Use Case |
+|--------|-----------------|---------------|----------|
+| Char   | Very Long       | Never         | Small data, multilingual |
+| Word   | Short           | Common        | Large vocab, semantic tasks |
+| BPE    | Medium          | Rare          | Production systems |
 
-## Special Tokens
+## special tokens
 
 Every tokenizer needs these:
 
@@ -123,7 +123,7 @@ special_tokens = ['<pad>', '<unk>', '<bos>', '<eos>']
 # <eos>: end of sequence
 ```
 
-## Implementation Pattern
+## implementation pattern
 
 All tokenizers follow this interface:
 
@@ -135,28 +135,11 @@ class Tokenizer:
         
     def encode(self, text):
         # text -> list of indices
-        return [self.token_to_idx[token] for token in tokens]
+        return [self.stoi[token] for token in tokens]
         
     def decode(self, indices):
-        # indices -> text
-        return ''.join(self.idx_to_token[i] for i in indices)
+        # indices -> text (join method depends on tokenizer type)
+        tokens = [self.itos[i] for i in indices]
+        return ''.join(tokens)  # char-level: no spaces
+        # return ' '.join(tokens)  # word-level: spaces between words
 ```
-
-## Choosing Your Tokenizer
-
-**Start with char-level** if:
-- Small dataset (< 1M tokens)
-- Multiple languages
-- Lots of rare words
-
-**Use word-level** if:
-- Large vocabulary is fine
-- Semantic understanding matters
-- English-only
-
-**Use BPE** if:
-- Production system
-- Memory/compute constraints matter
-- Need balance of all factors
-
-The tokenizer determines your model's view of language. Character-level sees letters. Word-level sees concepts. BPE sees frequent patterns. Choose the view that matches your task. 

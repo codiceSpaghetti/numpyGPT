@@ -1,25 +1,42 @@
-# Backpropagation: A Hands-On Guide
+# backpropagation: intuition
 
-*The algorithm that makes neural networks learn*
+*The algorithm that makes neural networks learn.*
 
-## The Problem
+## the problem
 
 You have a neural network. It makes predictions. They're wrong. You need to adjust the weights to make better predictions. But there are millions of weights. Which ones to change? By how much?
 
-Naive approach: try every weight, see what happens. This takes forever.
+You just need one basic concept from calculus: **derivatives**.
+A derivative tells you how a small change in something (a weight) affects something else (the **loss**).
 
-Smart approach: compute gradients. This tells you exactly how each weight affects the loss. One backward pass gives you all the information you need.
+Once you have those gradients, you do something simple: move each weight a little bit in the **opposite direction of the gradient**.
+That’s called **gradient descent**.
+You’re climbing down the **loss curve**, looking for the lowest point.
 
-## The Solution: Chain Rule
+How to compute gradients?
+
+We split the problem into smaller parts and use the **chain rule** to compute the gradient of the loss with respect to each part.
+
+### why 'backprop'?
+
+We **propagate the error backward** through the network. Starting from the output's loss, we apply the **chain rule layer by layer**, working our way back to the inputs.
+At each step, we compute how much each node contributed to the error, and how much its weights need to change to reduce it.
+
+Each layer passes its gradients to the one before it, so there is a **top-down flow of information** to provide to every parameter its update direction.
+
+That’s it. Backprop is just an **efficient application of the chain rule** to compute gradients in a big function (e.g., a transformer) composed of many smaller ones.
+
+
+## the solution: chain rule
 
 ```python
 # If f(x) = h(g(x)), then:
 # df/dx = (dh/dg) * (dg/dx)
 ```
 
-That's it. Everything else is just applying this rule systematically.
+That's all. Everything else is just applying this rule systematically.
 
-## Linear Layer Implementation
+## linear layer implementation
 
 ```python
 class Linear:
@@ -39,7 +56,7 @@ class Linear:
         return dX
 ```
 
-## Why These Formulas Work
+## why these formulas work
 
 Forward: `Y = X @ W + b`
 
@@ -48,19 +65,16 @@ Backward: Given `dY` (how loss changes w.r.t Y), find how loss changes w.r.t X, 
 **Weight gradient:** `dW = X.T @ dY`
 - From Y = XW, we get ∂Y/∂W = X  
 - Chain rule: ∂L/∂W = ∂L/∂Y × ∂Y/∂W = dY × X
-- Matrix dimensions: need X.T @ dY to get correct shape
 
 **Bias gradient:** `db = sum(dY, axis=0)`
 - From Y = XW + b, we get ∂Y/∂b = 1
 - Chain rule: ∂L/∂b = ∂L/∂Y × 1 = dY
-- Sum over batch since bias is shared
 
 **Input gradient:** `dX = dY @ W.T` 
 - From Y = XW, we get ∂Y/∂X = W
 - Chain rule: ∂L/∂X = ∂L/∂Y × ∂Y/∂X = dY × W
-- Matrix dimensions: need dY @ W.T to get correct shape
 
-## Example Walkthrough
+## example walkthrough
 
 ```python
 # Setup
@@ -70,7 +84,7 @@ b = np.array([0.1, 0.2])
 
 # Forward
 Y = X @ W + b
-# Y = [[0.6, 1.3], [1.4, 2.7]]
+# Y = [[0.6, 1.3], [1.2, 2.7]]
 
 # Backward (assume dY = ones)
 dY = np.ones_like(Y)  # [[1, 1], [1, 1]]
@@ -80,7 +94,7 @@ db = np.sum(dY, axis=0)  # [2, 2]
 dX = dY @ W.T  # [[0.4, 0.6], [0.4, 0.6]]
 ```
 
-## Other Common Layers
+## other common layers
 
 **ReLU:**
 ```python
@@ -91,16 +105,7 @@ def relu_backward(dout, x):
     return dout * (x > 0)
 ```
 
-**Softmax + CrossEntropy:**
-```python
-def softmax_crossentropy_backward(probs, targets):
-    batch_size = probs.shape[0]
-    dlogits = probs.copy()
-    dlogits[range(batch_size), targets] -= 1
-    return dlogits / batch_size
-```
-
-## Implementation Pattern
+## implementation pattern
 
 Every layer follows this pattern:
 
@@ -118,19 +123,8 @@ class Layer:
         # 4. return input gradients
 ```
 
-## Gradient Checking
 
-Always test your backward pass:
-
-```python
-def gradient_check(f, x, analytic_grad):
-    h = 1e-7
-    grad_numerical = (f(x + h) - f(x - h)) / (2 * h)
-    rel_error = abs(analytic_grad - grad_numerical) / (abs(analytic_grad) + abs(grad_numerical))
-    assert rel_error < 1e-7, f"gradient check failed: {rel_error}"
-```
-
-## Shape Debugging
+## shape debugging
 
 Most bugs are shape mismatches. Always check:
 
@@ -141,7 +135,7 @@ print(f"dY: {dY.shape}, dW: {dW.shape}, dX: {dX.shape}")
 
 The gradient of any variable must have the same shape as the variable itself.
 
-## The Training Loop
+## the training loop
 
 ```python
 # forward pass
@@ -155,5 +149,3 @@ loss.backward()
 # update weights
 optimizer.step()
 ```
-
-That's backpropagation. It's just the chain rule applied systematically to compute gradients efficiently. Once you understand the math and can implement a few layers, you understand the engine that powers all of deep learning. 
