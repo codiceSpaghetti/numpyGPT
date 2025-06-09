@@ -22,8 +22,10 @@ class Embedding(Module):
         self.dW = np.zeros_like(self.W)
         X = self.cache_input
 
-        # out[i,j] = W[X[i,j]], so ∂L/∂W[k] = Σ_{i,j: X[i,j]=k} ∂L/∂out[i,j]
-        np.add.at(self.dW, X.flatten(), dZ.reshape(-1, self.embed_dim))
+        # We add the gradients to the corresponding rows of the weight matrix W.
+        # Since Z[i, j] = W[X[i, j]], the gradient ∂L/∂W[k] is the sum of ∂L/∂Z[i, j]
+        # over all (i, j) where X[i, j] == k.
+        np.add.at(self.dW, X.flatten(), dZ.reshape(-1, self.embed_dim))  # in place accumulation for efficiency
 
     def params(self):
         return {"W": self.W}

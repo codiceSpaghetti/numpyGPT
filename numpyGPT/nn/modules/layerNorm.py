@@ -20,7 +20,7 @@ class LayerNorm(Module):
         mean = np.mean(X, axis=-1, keepdims=True)  # (B, T, 1)
         var = np.var(X, axis=-1, keepdims=True)  # (B, T, 1)
 
-        X_norm = (X - mean) / np.sqrt(var + self.eps)  # (B, T, C)
+        X_norm = (X - mean) / np.sqrt(var + self.eps)  # z-score normalization
 
         out = self.gamma * X_norm + self.beta  # (B, T, C)
 
@@ -41,22 +41,26 @@ class LayerNorm(Module):
 
         N = X.shape[-1]
 
-        self.dgamma = np.sum(dZ * X_norm, axis=(0, 1))  # ∂L/∂γ = Σ ∂L/∂y · x̂
-        self.dbeta = np.sum(dZ, axis=(0, 1))  # ∂L/∂β = Σ ∂L/∂y
+        # sum over batch and time dimensions
+        self.dgamma = np.sum(dZ * X_norm, axis=(0, 1))  # mul -> ∂L/∂γ = Σ ∂L/∂y · x̂
+        self.dbeta = np.sum(dZ, axis=(0, 1))  # sum -> ∂L/∂β = Σ ∂L/∂y
 
-        dX_norm = dZ * self.gamma  # ∂L/∂x̂ = ∂L/∂y · γ
+        dX_norm = dZ * self.gamma  # mul -> ∂L/∂x̂ = ∂L/∂y · γ
 
         # x̂ = (x-μ)/√(σ²+ε), so ∂x̂/∂σ² = (x-μ)·(-1/2)(σ²+ε)^(-3/2)
-        dvar = np.sum(dX_norm * (X - mean), axis=-1, keepdims=True) * -1/2 * (var + self.eps)**(-3/2)  # ∂L/∂σ²
+        dvar = np.sum(dX_norm * (X - mean), axis=-1, keepdims=True) * -1/2 * (var + self.eps)**(-3/2)
 
         # μ = (1/N)Σx, so ∂μ/∂x = 1/N
-        # μ affects x̂ directly: ∂x̂/∂μ = -1/√(σ²+ε)
+        # μ affects x̂ directly: x̂ = (x-μ)/√(σ²+ε), so ∂x̂/∂μ = -1/√(σ²+ε)
         # μ affects σ² indirectly: σ² = (1/N)Σ(x-μ)², so ∂σ²/∂μ = (1/N)Σ(-2(x-μ)) = -2(x-μ)
         dmean = np.sum(dX_norm, axis=-1, keepdims=True) * -1 / np.sqrt(var + self.eps) + \
-            dvar * np.sum(-2 * (X - mean), axis=-1, keepdims=True) / N  # ∂L/∂μ
+            dvar * np.sum(-2 * (X - mean), axis=-1, keepdims=True) / N
 
-        # Total: ∂L/∂x = ∂L/∂x̂·∂x̂/∂x + ∂L/∂μ·∂μ/∂x + ∂L/∂σ²·∂σ²/∂x
-        dX = dX_norm / np.sqrt(var + self.eps) + dvar * 2 * (X - mean) / N + dmean / N  # ∂L/∂x
+        # x̂ = (x - μ) / √(σ² + ε), so ∂x̂/∂x = 1 / √(σ² + ε)
+        # μ = (1/N) Σx, so ∂μ/∂x = 1/N
+        # σ² = (1/N) Σ(x - μ)², so ∂σ²/∂x = 2(x - μ)/N
+        # Total: ∂L/∂x = ∂L/∂x̂ · ∂x̂/∂x + ∂L/∂μ · ∂μ/∂x + ∂L/∂σ² · ∂σ²/∂x
+        dX = dX_norm / np.sqrt(var + self.eps) + dmean / N + dvar * 2 * (X - mean) / N
 
         return dX
 

@@ -24,7 +24,7 @@ def clip_grad_norm(model, max_norm):
     total_norm = 0.0
     grads = model.grads()
 
-    for param_name, grad in grads.items():
+    for _, grad in grads.items():
         if grad is not None:
             param_norm = np.linalg.norm(grad)
             total_norm += param_norm ** 2
@@ -33,7 +33,7 @@ def clip_grad_norm(model, max_norm):
 
     if total_norm > max_norm:
         clip_coef = max_norm / (total_norm + 1e-6)
-        for param_name, grad in grads.items():
+        for _, grad in grads.items():
             if grad is not None:
                 grad *= clip_coef
 

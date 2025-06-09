@@ -1,5 +1,3 @@
-import numpy as np
-
 from .attention import MultiHeadAttention
 from .feedforward import FeedForward
 from .layerNorm import LayerNorm
@@ -11,9 +9,7 @@ class TransformerBlock(Module):
         super().__init__()
         self.attn = MultiHeadAttention(d_model, n_heads)
         self.ln1 = LayerNorm(d_model)
-
         self.ffn = FeedForward(d_model, d_ff)
-
         self.ln2 = LayerNorm(d_model)
 
     def forward(self, X, mask=None):
@@ -28,8 +24,8 @@ class TransformerBlock(Module):
         return X
 
     def backward(self, dZ):
-        # Residual: y = x + f(x), so ∂L/∂x = ∂L/∂y + ∂L/∂f(x) · ∂f/∂x
-
+        # Residual: y = x + f(x), so ∂L/∂x = ∂L/∂y * I + ∂L/∂f(x) · ∂f/∂x
+        # gradient flows through both paths
         dffn_out = dZ.copy()
         dX1 = dZ.copy()
 

@@ -1,8 +1,11 @@
 from .lr_scheduler import LRScheduler
 
 
-# pytorch: https://github.com/pytorch/pytorch/blob/v2.7.0/torch/optim/lr_scheduler.py#L432
 class StepLR(LRScheduler):
+    """
+    Step learning rate scheduler: https://github.com/pytorch/pytorch/blob/v2.7.0/torch/optim/lr_scheduler.py#L432
+    """
+
     def __init__(self, optimizer, step_size, gamma=0.1, last_epoch=-1):
         self.step_size = step_size
         self.gamma = gamma

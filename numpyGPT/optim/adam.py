@@ -41,8 +41,8 @@ class Adam(Optimizer):
 
                 g = grads[param_key]
 
-                self.m[i][param_key] = self.beta1 * self.m[i][param_key] + (1 - self.beta1) * g            # m_t   = β1 * m_{t-1} + (1 - β1) * g_t
-                self.v[i][param_key] = self.beta2 * self.v[i][param_key] + (1 - self.beta2) * (g ** 2)     # v_t   = β2 * v_{t-1} + (1 - β2) * g_t^2
+                self.m[i][param_key] = self.beta1 * self.m[i][param_key] + (1 - self.beta1) * g         # m_t   = β1 * m_{t-1} + (1 - β1) * g_t
+                self.v[i][param_key] = self.beta2 * self.v[i][param_key] + (1 - self.beta2) * (g ** 2)  # v_t   = β2 * v_{t-1} + (1 - β2) * g_t^2
 
                 m_hat = self.m[i][param_key] / (1 - self.beta1 ** self.t)  # m̂_t  = m_t / (1 - β1^t)
                 v_hat = self.v[i][param_key] / (1 - self.beta2 ** self.t)  # v̂_t  = v_t / (1 - β2^t)

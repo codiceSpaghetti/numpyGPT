@@ -1,10 +1,14 @@
-class Optimizer:
+from abc import ABC, abstractmethod
+
+
+class Optimizer(ABC):
     def __init__(self, modules, lr=0.001):
         if self.__class__ == Optimizer:
             raise TypeError("Cannot instantiate abstract class Optimizer directly")
         self.params = modules
         self.lr = lr
 
+    @abstractmethod
     def step(self):
         raise NotImplementedError
 

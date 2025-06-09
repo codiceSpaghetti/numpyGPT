@@ -1,6 +1,6 @@
 import numpy as np
 
-from .module import Module
+from numpyGPT.nn.modules.module import Module
 
 
 class Softmax(Module):
@@ -9,7 +9,7 @@ class Softmax(Module):
         self.cache_output = None
 
     def forward(self, X):
-        X_shifted = X - np.max(X, axis=-1, keepdims=True)  # (*, d)
+        X_shifted = X - np.max(X, axis=-1, keepdims=True)  # (*, d) softmax trick for numerical stability
         exp_X = np.exp(X_shifted)  # (*, d)
         softmax_output = exp_X / np.sum(exp_X, axis=-1, keepdims=True)  # (*, d)
         self.cache_output = softmax_output
@@ -46,7 +46,7 @@ class ReLU(Module):
 
     def forward(self, X):
         self.cache_input = X
-        return np.maximum(0, X)  # ReLU(x) = max(0, x)
+        return np.maximum(0, X)
 
     def backward(self, dZ):
         X = self.cache_input
@@ -69,7 +69,7 @@ class LeakyReLU(Module):
 
     def forward(self, X):
         self.cache_input = X
-        return np.where(X > 0, X, self.alpha * X)  # LeakyReLU(x) = max(αx, x)
+        return np.where(X > 0, X, self.alpha * X)
 
     def backward(self, dZ):
         X = self.cache_input

@@ -15,7 +15,7 @@ class PositionalEncoding(Module):
 
     def forward(self, X):
         self.cache_input = X
-        B, T, C = X.shape  # (B, T, C)
+        B, T, C = X.shape
 
         pos_emb = self.W[:T, :]  # (T, C)
         out = X + pos_emb  # (B, T, C)
@@ -25,9 +25,10 @@ class PositionalEncoding(Module):
         B, T, C = dZ.shape
         self.dW = np.zeros_like(self.W)
 
-        # out = X + W[:T,:], so ∂out/∂W = I, ∂out/∂X = I
-        self.dW[:T, :] = np.sum(dZ, axis=0)  # ∂L/∂W = Σ_batch ∂L/∂out we will need it for gradient update
-        return dZ  # ∂L/∂X = ∂L/∂out
+        # out = X + W[:T, :], so ∂out/∂W[t] = 1 for every batch element at position t
+        # ∂L/∂W[t] = sum over all batch gradients at position t
+        self.dW[:T, :] = np.sum(dZ, axis=0)
+        return dZ
 
     def params(self):
         return {"W": self.W}

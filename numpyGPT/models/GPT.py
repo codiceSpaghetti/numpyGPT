@@ -11,7 +11,7 @@ from ..nn.modules.transformer import TransformerBlock
 
 class GPT(Module):
     """
-    Inspiried by GPT-2 architecture: https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
+    Inspired by GPT-2 architecture: https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
     """
 
     def __init__(self, vocab_size, max_len, d_model, n_heads, n_layers, d_ff):
@@ -29,7 +29,7 @@ class GPT(Module):
         self.cache = {}
 
     def forward(self, X, targets=None):
-        B, T = X.shape  # (B, T)
+        B, T = X.shape
 
         tok_emb = self.tok_emb(X)  # (B, T, C)
         X = self.pos_emb(tok_emb)  # (B, T, C)
@@ -53,17 +53,17 @@ class GPT(Module):
         logits, targets = self.cache['logits'], self.cache['targets']
         B, T, C = logits.shape
 
-        # d(CE)/d(logits) = softmax - one_hot
-        logits_reshaped = logits.reshape(-1, C)
-        targets_reshaped = targets.reshape(-1)
+        logits_reshaped = logits.reshape(-1, C)  # (B*T, C)
+        targets_reshaped = targets.reshape(-1)  # (B*T)
 
-        logits_max = np.max(logits_reshaped, axis=-1, keepdims=True)
-        exp_logits = np.exp(logits_reshaped - logits_max)
-        probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
+        logits_max = np.max(logits_reshaped, axis=-1, keepdims=True)  # (B*T, 1)
+        exp_logits = np.exp(logits_reshaped - logits_max)  # for numerically stable softmax
+        probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)  # (B*T, C)
 
+        # CE + softmax trick (https://stats.stackexchange.com/questions/235528/backpropagation-with-softmax-cross-entropy)
         dlogits = probs
-        dlogits[np.arange(len(targets_reshaped)), targets_reshaped] -= 1
-        dlogits /= len(targets_reshaped)
+        dlogits[np.arange(len(targets_reshaped)), targets_reshaped] -= 1  # d(CE)/d(logits) = softmax - one_hot
+        dlogits /= len(targets_reshaped)  # average over batch and sequence length
 
         dlogits = dlogits.reshape(B, T, C)
 
@@ -77,7 +77,7 @@ class GPT(Module):
         self.tok_emb.backward(dX)
 
     def _create_causal_mask(self, T):
-        mask = np.triu(np.ones((T, T)), k=1) * -1e9
+        mask = np.triu(np.ones((T, T)), k=1) * -1e9  # will add a large negative value to the scores of future tokens
         return mask[None, None, :, :]
 
     def generate(self, idx, max_new_tokens, temperature=1.0, eos_token_id=None):
@@ -86,7 +86,7 @@ class GPT(Module):
             logits = self(idx_cond)
             logits = logits[:, -1, :] / temperature
 
-            logits_shifted = logits - np.max(logits, axis=-1, keepdims=True)
+            logits_shifted = logits - np.max(logits, axis=-1, keepdims=True)  # for numerically stable softmax
             probs = np.exp(logits_shifted) / np.sum(np.exp(logits_shifted), axis=-1, keepdims=True)
 
             idx_next = np.array([[np.random.choice(self.vocab_size, p=probs[0])]])

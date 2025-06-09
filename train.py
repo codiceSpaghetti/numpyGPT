@@ -21,24 +21,25 @@ from numpyGPT.utils.vis import MetricsLogger
 
 data_dir = 'data/shakespeare_char'
 out_dir = 'out/char'
-eval_interval = 250
-eval_iters = 20
-log_interval = 10
 always_save_checkpoint = True
 resume = True
 
 batch_size = 16
 block_size = 128
-max_iters = 8000
 lr = 3e-4
 min_lr = 3e-5
 
 n_layer = 4
 n_head = 4
 n_embd = 256
+d_ff = 4*n_embd
 
-warmup_iters = 800
-lr_decay_iters = 8000
+max_iters = 8000
+warmup_iters = 800  # 10% of total iterations
+lr_decay_iters = 8000  # 100% of total iterations
+eval_interval = 200  # 2.5% of total iterations
+eval_iters = 20
+log_interval = 10
 grad_clip = 1.0
 
 config_keys = [k for k, v in globals().items() if not k.startswith('_') and isinstance(v, (int, float, bool, str))]
@@ -57,7 +58,7 @@ vocab_size = train_loader.vocab_size
 logger.info(f"vocab_size: {vocab_size}")
 
 model = GPT(vocab_size=vocab_size, max_len=block_size, d_model=n_embd,
-            n_heads=n_head, n_layers=n_layer, d_ff=4*n_embd)
+            n_heads=n_head, n_layers=n_layer, d_ff=d_ff)
 
 optimizer = Adam([model], lr=lr)
 scheduler = WarmupCosineLR(optimizer, warmup_iters, lr_decay_iters, min_lr)
@@ -75,7 +76,7 @@ def save_model(filepath, model, iter_num, val_loss=None, optimizer_state=None):
             'd_model': n_embd,
             'n_heads': n_head,
             'n_layers': n_layer,
-            'd_ff': 4*n_embd,
+            'd_ff': d_ff,
         }
     }
 
@@ -178,10 +179,7 @@ while True:
     logits, loss = model(X, Y)
     model.backward()
 
-    if grad_clip != 0.0:
-        grad_norm = clip_grad_norm(model, grad_clip)
-    else:
-        grad_norm = None
+    grad_norm = clip_grad_norm(model, grad_clip) if grad_clip != 0.0 else None
 
     optimizer.step()
     scheduler.step()
