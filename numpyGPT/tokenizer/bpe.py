@@ -174,40 +174,35 @@ class BPETokenizer:
                 tokens.remove(special)
 
         result = []
-        current_word = []
 
-        for token in tokens:
+        for i, token in enumerate(tokens):
             if token == '<|newline|>':
-                if current_word:
-                    result.append(''.join(current_word))
-                    current_word = []
                 result.append('\n')
             elif token == '<|tab|>':
-                if current_word:
-                    result.append(''.join(current_word))
-                    current_word = []
                 result.append('\t')
             elif token == '<|carriage_return|>':
-                if current_word:
-                    result.append(''.join(current_word))
-                    current_word = []
                 result.append('\r')
-            elif token == '</w>':
-                if current_word:
-                    result.append(''.join(current_word))
-                    current_word = []
-                result.append(' ')
             else:
-                current_word.append(token)
+                # Check if token ends with </w> (end of word marker)
+                if token.endswith('</w>'):
+                    word = token[:len('</w>')]  # Remove '</w>'
+                    result.append(word)
 
-        if current_word:
-            result.append(''.join(current_word))
+                    if i < len(tokens) - 1:
+                        result.append(' ')
+                else:
+                    # it is a subword token
+                    result.append(token)
 
         text = ''.join(result)
         text = re.sub(r' +', ' ', text)
+        text = re.sub(r" ([\'.,;:!?)])", r'\1', text)
+        text = re.sub(r"\b([A-Za-z]+) ?' ?(ll|re|ve|d|s|t|m)\b", r"\1'\2", text)
+        text = re.sub(r"([a-z]) :", r'\1:', text)
         text = re.sub(r' *\n *', '\n', text)
         text = re.sub(r' *\t *', '\t', text)
         text = re.sub(r' *\r *', '\r', text)
+
         return text.strip()
 
     @property

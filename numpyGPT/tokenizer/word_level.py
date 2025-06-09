@@ -74,7 +74,7 @@ class WordTokenizer:
 
         text = ''.join(result)
         text = re.sub(r' +', ' ', text)
-        text = re.sub(r" ([\'.,;!?)])", r'\1', text)
+        text = re.sub(r" ([\'.,;:!?)])", r'\1', text)
         text = re.sub(r"\b([A-Za-z]+) ?' ?(ll|re|ve|d|s|t|m)\b", r"\1'\2", text)
         text = re.sub(r"([a-z]) :", r'\1:', text)
         text = re.sub(r' *\n *', '\n', text)
