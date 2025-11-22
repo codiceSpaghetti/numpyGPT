@@ -9,7 +9,14 @@ class WarmupCosineLR(LRScheduler):
     Cosine Learning Rate Scheduler: https://arxiv.org/abs/1608.03983
     """
 
-    def __init__(self, optimizer: Optimizer, warmup_iters: int, lr_decay_iters: int, min_lr: float, last_epoch: int = -1) -> None:
+    def __init__(
+        self,
+        optimizer: Optimizer,
+        warmup_iters: int,
+        lr_decay_iters: int,
+        min_lr: float,
+        last_epoch: int = -1,
+    ) -> None:
         self.warmup_iters: int = warmup_iters
         self.lr_decay_iters: int = lr_decay_iters
         self.min_lr: float = min_lr

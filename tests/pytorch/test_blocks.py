@@ -11,7 +11,6 @@ from numpyGPT.nn.modules.transformer import TransformerBlock
 
 
 class TestBlocks(unittest.TestCase):
-
     def setUp(self):
         np.random.seed(42)
         torch.manual_seed(42)
@@ -25,7 +24,7 @@ class TestBlocks(unittest.TestCase):
             def __init__(self, max_len, d_model):
                 super().__init__()
                 pe = torch.from_numpy(np_pos_enc.W).float()
-                self.register_buffer('pe', pe)
+                self.register_buffer("pe", pe)
 
             def forward(self, x):
                 T = x.size(1)
@@ -67,9 +66,7 @@ class TestBlocks(unittest.TestCase):
                 super().__init__()
                 self.self_attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
                 self.feed_forward = nn.Sequential(
-                    nn.Linear(d_model, d_ff),
-                    nn.ReLU(),
-                    nn.Linear(d_ff, d_model)
+                    nn.Linear(d_model, d_ff), nn.ReLU(), nn.Linear(d_ff, d_model)
                 )
                 self.norm1 = nn.LayerNorm(d_model)
                 self.norm2 = nn.LayerNorm(d_model)
@@ -87,16 +84,10 @@ class TestBlocks(unittest.TestCase):
 
         torch_block = TorchTransformerBlock(d_model, n_heads, d_ff)
 
-        qkv_weight = np.concatenate([
-            np_block.attn.W_q.W.T,
-            np_block.attn.W_k.W.T,
-            np_block.attn.W_v.W.T
-        ], axis=0)
-        qkv_bias = np.concatenate([
-            np_block.attn.W_q.b,
-            np_block.attn.W_k.b,
-            np_block.attn.W_v.b
-        ])
+        qkv_weight = np.concatenate(
+            [np_block.attn.W_q.W.T, np_block.attn.W_k.W.T, np_block.attn.W_v.W.T], axis=0
+        )
+        qkv_bias = np.concatenate([np_block.attn.W_q.b, np_block.attn.W_k.b, np_block.attn.W_v.b])
 
         torch_block.self_attn.in_proj_weight.data = torch.from_numpy(qkv_weight).float()
         torch_block.self_attn.in_proj_bias.data = torch.from_numpy(qkv_bias).float()
@@ -117,7 +108,7 @@ class TestBlocks(unittest.TestCase):
         x_torch = torch.from_numpy(x_np).requires_grad_(True)
 
         mask_np = np.triu(np.ones((seq_len, seq_len)) * -np.inf, k=1)
-        mask_torch = torch.triu(torch.ones(seq_len, seq_len) * float('-inf'), diagonal=1)
+        mask_torch = torch.triu(torch.ones(seq_len, seq_len) * float("-inf"), diagonal=1)
 
         out_np = np_block(x_np, mask=mask_np)
         out_torch = torch_block(x_torch, mask=mask_torch)
@@ -142,16 +133,19 @@ class TestBlocks(unittest.TestCase):
                 super().__init__()
                 self.token_embedding_table = nn.Embedding(vocab_size, d_model)
                 self.position_embedding_table = nn.Embedding(max_len, d_model)
-                self.blocks = nn.Sequential(*[
-                    nn.TransformerEncoderLayer(
-                        d_model=d_model,
-                        nhead=n_heads,
-                        dim_feedforward=d_ff,
-                        activation='relu',
-                        batch_first=True,
-                        norm_first=True
-                    ) for _ in range(n_layers)
-                ])
+                self.blocks = nn.Sequential(
+                    *[
+                        nn.TransformerEncoderLayer(
+                            d_model=d_model,
+                            nhead=n_heads,
+                            dim_feedforward=d_ff,
+                            activation="relu",
+                            batch_first=True,
+                            norm_first=True,
+                        )
+                        for _ in range(n_layers)
+                    ]
+                )
                 self.ln_f = nn.LayerNorm(d_model)
                 self.lm_head = nn.Linear(d_model, vocab_size)
 
@@ -161,7 +155,7 @@ class TestBlocks(unittest.TestCase):
                 pos_emb = self.position_embedding_table(torch.arange(T, device=idx.device))
                 x = tok_emb + pos_emb
 
-                mask = torch.triu(torch.ones(T, T) * float('-inf'), diagonal=1)
+                mask = torch.triu(torch.ones(T, T) * float("-inf"), diagonal=1)
 
                 for block in self.blocks:
                     x = block(x, src_mask=mask)
@@ -192,6 +186,7 @@ class TestBlocks(unittest.TestCase):
         targets_torch = torch.from_numpy(targets).long()
 
         from numpyGPT.nn.modules.activation import Softmax
+
         softmax = Softmax()
 
         logits_reshaped = logits_np.reshape(-1, vocab_size)
@@ -211,5 +206,5 @@ class TestBlocks(unittest.TestCase):
         self.assertTrue(np.allclose(grad_logits_np, logits_torch.grad.numpy(), atol=1e-6))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

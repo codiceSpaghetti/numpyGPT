@@ -39,6 +39,7 @@ class Linear(Module):
 
     def backward(self, dZ: ndarray) -> ndarray:
         X = self.cache_input
+        assert X is not None, "forward must be called before backward"
 
         if X.ndim == 3:
             B, T, C = X.shape

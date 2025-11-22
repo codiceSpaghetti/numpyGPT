@@ -12,8 +12,8 @@ def run_tests() -> bool:
     sys.path.insert(0, project_root)
 
     loader = unittest.TestLoader()
-    start_dir = os.path.join(project_root, 'tests')
-    suite = loader.discover(start_dir, pattern='test_*.py')
+    start_dir = os.path.join(project_root, "tests")
+    suite = loader.discover(start_dir, pattern="test_*.py")
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
@@ -77,12 +77,12 @@ def demo_lr_schedulers() -> None:
         scheduler.step()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     demo_adam_optimizer()
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
 
     demo_lr_schedulers()
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
 
     success = run_tests()
     sys.exit(0 if success else 1)

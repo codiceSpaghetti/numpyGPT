@@ -39,7 +39,5 @@ class TestPositionalEncoding(unittest.TestCase):
         self.assertIn("W", grads)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

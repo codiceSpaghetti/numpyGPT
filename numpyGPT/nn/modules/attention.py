@@ -53,21 +53,29 @@ class MultiHeadAttention(Module):
         output = self.W_o(attn_output)  # (B, T, C)
 
         self.cache = {
-            'X': X, 'Q': Q, 'K': K, 'V': V,
-            'attn_weights': attn_weights,
-            'original_shape': original_shape
+            "X": X,
+            "Q": Q,
+            "K": K,
+            "V": V,
+            "attn_weights": attn_weights,
+            "original_shape": original_shape,
         }
 
         return output
 
     def backward(self, dZ: ndarray) -> ndarray:
-        X, Q, K, V = self.cache['X'], self.cache['Q'], self.cache['K'], self.cache['V']
-        attn_weights = self.cache['attn_weights']
-        original_shape = self.cache['original_shape']
+        X, Q, K, V = self.cache["X"], self.cache["Q"], self.cache["K"], self.cache["V"]
+        assert isinstance(X, np.ndarray) and isinstance(Q, np.ndarray), "forward must be called"
+        assert isinstance(K, np.ndarray) and isinstance(V, np.ndarray), "forward must be called"
+        attn_weights = self.cache["attn_weights"]
+        assert isinstance(attn_weights, np.ndarray), "forward must be called before backward"
+        original_shape = self.cache["original_shape"]
         B, T, C = X.shape
 
         dattn_output = self.W_o.backward(dZ)  # ∂L/∂attn_output
-        dattn_output = dattn_output.reshape(B, T, self.n_heads, self.d_k).swapaxes(1, 2)  # (B, nh, T, d_k)
+        dattn_output = dattn_output.reshape(B, T, self.n_heads, self.d_k).swapaxes(
+            1, 2
+        )  # (B, nh, T, d_k)
 
         # Attention output = attn_weights @ V
         # ∂L/∂attn_weights = ∂L/∂attn_output @ V^T

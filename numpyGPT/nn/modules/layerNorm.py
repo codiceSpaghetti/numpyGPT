@@ -25,20 +25,15 @@ class LayerNorm(Module):
 
         out = self.gamma * X_norm + self.beta  # (B, T, C)
 
-        self.cache = {
-            'X': X,
-            'mean': mean,
-            'var': var,
-            'X_norm': X_norm
-        }
+        self.cache = {"X": X, "mean": mean, "var": var, "X_norm": X_norm}
 
         return out
 
     def backward(self, dZ: ndarray) -> ndarray:
-        X = self.cache['X']
-        mean = self.cache['mean']
-        var = self.cache['var']
-        X_norm = self.cache['X_norm']
+        X = self.cache["X"]
+        mean = self.cache["mean"]
+        var = self.cache["var"]
+        X_norm = self.cache["X_norm"]
 
         N = X.shape[-1]
 
@@ -49,13 +44,20 @@ class LayerNorm(Module):
         dX_norm = dZ * self.gamma  # mul -> ∂L/∂x̂ = ∂L/∂y · γ
 
         # x̂ = (x-μ)/√(σ²+ε), so ∂x̂/∂σ² = (x-μ)·(-1/2)(σ²+ε)^(-3/2)
-        dvar = np.sum(dX_norm * (X - mean), axis=-1, keepdims=True) * -1/2 * (var + self.eps)**(-3/2)
+        dvar = (
+            np.sum(dX_norm * (X - mean), axis=-1, keepdims=True)
+            * -1
+            / 2
+            * (var + self.eps) ** (-3 / 2)
+        )
 
         # μ = (1/N)Σx, so ∂μ/∂x = 1/N
         # μ affects x̂ directly: x̂ = (x-μ)/√(σ²+ε), so ∂x̂/∂μ = -1/√(σ²+ε)
         # μ affects σ² indirectly: σ² = (1/N)Σ(x-μ)², so ∂σ²/∂μ = (1/N)Σ(-2(x-μ)) = -2(x-μ)
-        dmean = np.sum(dX_norm, axis=-1, keepdims=True) * -1 / np.sqrt(var + self.eps) + \
-            dvar * np.sum(-2 * (X - mean), axis=-1, keepdims=True) / N
+        dmean = (
+            np.sum(dX_norm, axis=-1, keepdims=True) * -1 / np.sqrt(var + self.eps)
+            + dvar * np.sum(-2 * (X - mean), axis=-1, keepdims=True) / N
+        )
 
         # x̂ = (x - μ) / √(σ² + ε), so ∂x̂/∂x = 1 / √(σ² + ε)
         # μ = (1/N) Σx, so ∂μ/∂x = 1/N

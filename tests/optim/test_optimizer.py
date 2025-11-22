@@ -56,10 +56,10 @@ class TestAdam(unittest.TestCase):
         self.assertEqual(len(optimizer.m), 1)
         self.assertEqual(len(optimizer.v), 1)
 
-        self.assertTrue(np.allclose(optimizer.m[0]['W'], 0))
-        self.assertTrue(np.allclose(optimizer.m[0]['b'], 0))
-        self.assertTrue(np.allclose(optimizer.v[0]['W'], 0))
-        self.assertTrue(np.allclose(optimizer.v[0]['b'], 0))
+        self.assertTrue(np.allclose(optimizer.m[0]["W"], 0))
+        self.assertTrue(np.allclose(optimizer.m[0]["b"], 0))
+        self.assertTrue(np.allclose(optimizer.v[0]["W"], 0))
+        self.assertTrue(np.allclose(optimizer.v[0]["b"], 0))
 
     def test_adam_step(self):
         optimizer = Adam([self.layer], lr=0.1)
@@ -73,17 +73,17 @@ class TestAdam(unittest.TestCase):
         self.assertFalse(np.allclose(self.layer.W, W_before))
         self.assertFalse(np.allclose(self.layer.b, b_before))
 
-        self.assertFalse(np.allclose(optimizer.m[0]['W'], 0))
-        self.assertFalse(np.allclose(optimizer.m[0]['b'], 0))
-        self.assertFalse(np.allclose(optimizer.v[0]['W'], 0))
-        self.assertFalse(np.allclose(optimizer.v[0]['b'], 0))
+        self.assertFalse(np.allclose(optimizer.m[0]["W"], 0))
+        self.assertFalse(np.allclose(optimizer.m[0]["b"], 0))
+        self.assertFalse(np.allclose(optimizer.v[0]["W"], 0))
+        self.assertFalse(np.allclose(optimizer.v[0]["b"], 0))
 
     def test_adam_multiple_steps(self):
         optimizer = Adam([self.layer], lr=0.01)
 
         W_history = [self.layer.W.copy()]
 
-        for i in range(5):
+        for _ in range(5):
             self.layer.dW = np.random.randn(3, 2) * 0.01
             self.layer.db = np.random.randn(2) * 0.01
             optimizer.step()
@@ -117,7 +117,5 @@ class TestAdam(unittest.TestCase):
         self.assertLess(losses[-1], losses[0])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

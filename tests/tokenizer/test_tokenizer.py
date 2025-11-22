@@ -6,38 +6,43 @@ from numpyGPT.tokenizer.word_level import WordTokenizer
 
 
 class TestCharTokenizer(unittest.TestCase):
-
     def setUp(self):
         self.tokenizer = CharTokenizer()
 
     def test_tokenize(self):
         text = "hello world"
         tokens = self.tokenizer.tokenize(text)
-        expected = ['h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd']
+        expected = ["h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d"]
         self.assertEqual(tokens, expected)
 
     def test_tokenize_with_newlines(self):
         text = "hello\nworld"
         tokens = self.tokenizer.tokenize(text)
-        expected = ['h', 'e', 'l', 'l', 'o', '\n', 'w', 'o', 'r', 'l', 'd']
+        expected = ["h", "e", "l", "l", "o", "\n", "w", "o", "r", "l", "d"]
         self.assertEqual(tokens, expected)
 
     def test_build_vocab_single_text(self):
         text = "hello"
         self.tokenizer.build_vocab(text)
 
-        expected_chars = set(['h', 'e', 'l', 'o'])
-        actual_chars = set([char for char in self.tokenizer.char_to_idx.keys()
-                           if char not in self.tokenizer.special_tokens])
+        expected_chars = {"h", "e", "l", "o"}
+        actual_chars = {
+            char
+            for char in self.tokenizer.char_to_idx.keys()
+            if char not in self.tokenizer.special_tokens
+        }
         self.assertEqual(actual_chars, expected_chars)
 
     def test_build_vocab_multiple_texts(self):
         texts = ["hello", "world"]
         self.tokenizer.build_vocab(texts)
 
-        expected_chars = set(['h', 'e', 'l', 'o', 'w', 'r', 'd'])
-        actual_chars = set([char for char in self.tokenizer.char_to_idx.keys()
-                           if char not in self.tokenizer.special_tokens])
+        expected_chars = {"h", "e", "l", "o", "w", "r", "d"}
+        actual_chars = {
+            char
+            for char in self.tokenizer.char_to_idx.keys()
+            if char not in self.tokenizer.special_tokens
+        }
         self.assertEqual(actual_chars, expected_chars)
 
     def test_encode_decode(self):
@@ -62,7 +67,7 @@ class TestCharTokenizer(unittest.TestCase):
         self.tokenizer.build_vocab("hello")
 
         encoded = self.tokenizer.encode("xyz")
-        unk_idx = self.tokenizer.char_to_idx['<unk>']
+        unk_idx = self.tokenizer.char_to_idx["<unk>"]
         expected = [unk_idx, unk_idx, unk_idx]
 
         self.assertEqual(encoded, expected)
@@ -76,51 +81,56 @@ class TestCharTokenizer(unittest.TestCase):
 
 
 class TestWordTokenizer(unittest.TestCase):
-
     def setUp(self):
         self.tokenizer = WordTokenizer()
 
     def test_tokenize(self):
         text = "Hello, world! How are you?"
         tokens = self.tokenizer.tokenize(text)
-        expected = ['hello', ',', 'world', '!', 'how', 'are', 'you', '?']
+        expected = ["hello", ",", "world", "!", "how", "are", "you", "?"]
         self.assertEqual(tokens, expected)
 
     def test_tokenize_with_newlines(self):
         text = "hello\nworld"
         tokens = self.tokenizer.tokenize(text)
-        expected = ['hello', '<|newline|>', 'world']
+        expected = ["hello", "<|newline|>", "world"]
         self.assertEqual(tokens, expected)
 
     def test_tokenize_with_tabs(self):
         text = "hello\tworld"
         tokens = self.tokenizer.tokenize(text)
-        expected = ['hello', '<|tab|>', 'world']
+        expected = ["hello", "<|tab|>", "world"]
         self.assertEqual(tokens, expected)
 
     def test_build_vocab_single_text(self):
         text = "hello world hello"
         self.tokenizer.build_vocab(text)
 
-        expected_words = set(['hello', 'world'])
-        actual_words = set([word for word in self.tokenizer.word_to_idx.keys()
-                           if word not in self.tokenizer.special_tokens])
+        expected_words = {"hello", "world"}
+        actual_words = {
+            word
+            for word in self.tokenizer.word_to_idx.keys()
+            if word not in self.tokenizer.special_tokens
+        }
         self.assertEqual(actual_words, expected_words)
 
     def test_build_vocab_multiple_texts(self):
         texts = ["hello world", "world peace"]
         self.tokenizer.build_vocab(texts)
 
-        expected_words = set(['hello', 'world', 'peace'])
-        actual_words = set([word for word in self.tokenizer.word_to_idx.keys()
-                           if word not in self.tokenizer.special_tokens])
+        expected_words = {"hello", "world", "peace"}
+        actual_words = {
+            word
+            for word in self.tokenizer.word_to_idx.keys()
+            if word not in self.tokenizer.special_tokens
+        }
         self.assertEqual(actual_words, expected_words)
 
     def test_build_vocab_with_newlines(self):
         text = "hello\nworld"
         self.tokenizer.build_vocab(text)
 
-        self.assertIn('<|newline|>', self.tokenizer.word_to_idx)
+        self.assertIn("<|newline|>", self.tokenizer.word_to_idx)
 
     def test_encode_decode(self):
         text = "hello world"
@@ -144,7 +154,7 @@ class TestWordTokenizer(unittest.TestCase):
         self.tokenizer.build_vocab("hello world")
 
         encoded = self.tokenizer.encode("unknown words")
-        unk_idx = self.tokenizer.word_to_idx['<unk>']
+        unk_idx = self.tokenizer.word_to_idx["<unk>"]
         expected = [unk_idx, unk_idx]
 
         self.assertEqual(encoded, expected)
@@ -154,9 +164,10 @@ class TestWordTokenizer(unittest.TestCase):
         text = "hello hello world world test"
         tokenizer.build_vocab(text)
 
-        expected_words = set(['hello', 'world'])
-        actual_words = set([word for word in tokenizer.word_to_idx.keys()
-                           if word not in tokenizer.special_tokens])
+        expected_words = {"hello", "world"}
+        actual_words = {
+            word for word in tokenizer.word_to_idx.keys() if word not in tokenizer.special_tokens
+        }
         self.assertEqual(actual_words, expected_words)
 
     def test_max_vocab_size(self):
@@ -178,39 +189,38 @@ class TestWordTokenizer(unittest.TestCase):
         self.tokenizer.build_vocab(text)
 
         tokens = self.tokenizer.tokenize(text)
-        self.assertIn(',', tokens)
-        self.assertIn('!', tokens)
-        self.assertIn('hello', tokens)
-        self.assertIn('world', tokens)
+        self.assertIn(",", tokens)
+        self.assertIn("!", tokens)
+        self.assertIn("hello", tokens)
+        self.assertIn("world", tokens)
 
 
 class TestBPETokenizer(unittest.TestCase):
-
     def setUp(self):
         self.tokenizer = BPETokenizer(vocab_size=50)
 
     def test_get_word_freqs_single_text(self):
         text = "hello world hello"
         word_freqs = self.tokenizer._get_word_freqs(text)
-        expected = {'hello': 2, 'world': 1}
+        expected = {"hello": 2, "world": 1}
         self.assertEqual(word_freqs, expected)
 
     def test_get_word_freqs_multiple_texts(self):
         texts = ["hello world", "hello test"]
         word_freqs = self.tokenizer._get_word_freqs(texts)
-        expected = {'hello': 2, 'world': 1, 'test': 1}
+        expected = {"hello": 2, "world": 1, "test": 1}
         self.assertEqual(word_freqs, expected)
 
     def test_get_word_freqs_with_newlines(self):
         text = "hello\nworld"
         word_freqs = self.tokenizer._get_word_freqs(text)
-        expected = {'hello': 1, '<|newline|>': 1, 'world': 1}
+        expected = {"hello": 1, "<|newline|>": 1, "world": 1}
         self.assertEqual(word_freqs, expected)
 
     def test_get_pairs(self):
-        word = ['h', 'e', 'l', 'l', 'o']
+        word = ["h", "e", "l", "l", "o"]
         pairs = self.tokenizer._get_pairs(word)
-        expected = {('h', 'e'), ('e', 'l'), ('l', 'l'), ('l', 'o')}
+        expected = {("h", "e"), ("e", "l"), ("l", "l"), ("l", "o")}
         self.assertEqual(pairs, expected)
 
     def test_build_vocab_learns_merges(self):
@@ -233,7 +243,7 @@ class TestBPETokenizer(unittest.TestCase):
         text = "hello\nworld"
         self.tokenizer.build_vocab(text)
 
-        self.assertIn('<|newline|>', self.tokenizer.token_to_idx)
+        self.assertIn("<|newline|>", self.tokenizer.token_to_idx)
 
     def test_encode_decode_simple(self):
         text = "hello world"
@@ -266,7 +276,7 @@ class TestBPETokenizer(unittest.TestCase):
         self.tokenizer.build_vocab("hello world")
 
         encoded = self.tokenizer.encode("xyz unknown")
-        unk_idx = self.tokenizer.token_to_idx['<unk>']
+        unk_idx = self.tokenizer.token_to_idx["<unk>"]
 
         self.assertIn(unk_idx, encoded)
 
@@ -274,8 +284,8 @@ class TestBPETokenizer(unittest.TestCase):
         text = "hello world"
         self.tokenizer.build_vocab(text)
 
-        self.assertIn('<pad>', self.tokenizer.token_to_idx)
-        self.assertIn('<unk>', self.tokenizer.token_to_idx)
+        self.assertIn("<pad>", self.tokenizer.token_to_idx)
+        self.assertIn("<unk>", self.tokenizer.token_to_idx)
 
     def test_vocab_size_constraint(self):
         tokenizer = BPETokenizer(vocab_size=30)
@@ -289,7 +299,7 @@ class TestBPETokenizer(unittest.TestCase):
         self.tokenizer.build_vocab(text)
 
         word = "aaaa"
-        tokenized = self.tokenizer._tokenize_word(' '.join(list(word)))
+        tokenized = self.tokenizer._tokenize_word(" ".join(list(word)))
 
         self.assertIsInstance(tokenized, list)
         self.assertGreater(len(tokenized), 0)
@@ -302,7 +312,7 @@ class TestBPETokenizer(unittest.TestCase):
         decoded = self.tokenizer.decode(encoded)
 
         self.assertEqual(decoded, text)
-        self.assertIn(' ', decoded)
+        self.assertIn(" ", decoded)
 
     def test_empty_text(self):
         self.tokenizer.build_vocab("hello world")
@@ -323,7 +333,5 @@ class TestBPETokenizer(unittest.TestCase):
         self.assertEqual(decoded, text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

@@ -4,13 +4,14 @@ import time
 
 import numpy as np
 
+from numpyGPT.optim import Optimizer
+
 from ..nn.modules.module import Module
 
 
-def setup_logger(name: str = 'train', level: int = logging.INFO) -> logging.Logger:
+def setup_logger(name: str = "train", level: int = logging.INFO) -> logging.Logger:
     formatter = logging.Formatter(
-        fmt='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        fmt="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
     handler = logging.StreamHandler(sys.stdout)
@@ -28,10 +29,10 @@ def clip_grad_norm(model: Module, max_norm: float) -> float:
 
     for _, grad in grads.items():
         if grad is not None:
-            param_norm = np.linalg.norm(grad)
-            total_norm += param_norm ** 2
+            param_norm = float(np.linalg.norm(grad))
+            total_norm += param_norm**2
 
-    total_norm = np.sqrt(total_norm)
+    total_norm = float(np.sqrt(total_norm))
 
     if total_norm > max_norm:
         clip_coef = max_norm / (total_norm + 1e-6)
@@ -42,7 +43,7 @@ def clip_grad_norm(model: Module, max_norm: float) -> float:
     return float(total_norm)
 
 
-def get_lr(optimizer: 'Optimizer') -> float:  # type: ignore
+def get_lr(optimizer: Optimizer) -> float:
     return optimizer.lr
 
 
@@ -52,9 +53,13 @@ class TrainingMonitor:
         self.step_times: list[float] = []
         self.losses: list[float] = []
 
-    def log_step(self, iter_num: int, loss: float, lr: float, grad_norm: float | None = None) -> str | None:
+    def log_step(
+        self, iter_num: int, loss: float, lr: float, grad_norm: float | None = None
+    ) -> str | None:
         if iter_num % self.log_interval == 0:
-            step_time = time.time() if len(self.step_times) == 0 else time.time() - self.step_times[-1]
+            step_time = (
+                time.time() if len(self.step_times) == 0 else time.time() - self.step_times[-1]
+            )
             self.step_times.append(time.time())
             self.losses.append(loss)
 

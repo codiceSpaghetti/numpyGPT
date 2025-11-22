@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-import numpy as np
 from numpy import ndarray
 
 
@@ -10,12 +9,18 @@ class Module(ABC):
         self.training: bool = True
 
     @abstractmethod
-    def forward(self, x: ndarray) -> ndarray:
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError
 
     @abstractmethod
-    def backward(self, grad: ndarray) -> ndarray | None:
+    def backward(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError
+
+    def params(self) -> dict[str, ndarray]:
+        return {}
+
+    def grads(self) -> dict[str, ndarray | None]:
+        return {}
 
     def train(self) -> None:
         self.training = True
@@ -23,5 +28,5 @@ class Module(ABC):
     def eval(self) -> None:
         self.training = False
 
-    def __call__(self, *args: Any, **kwargs: Any) -> ndarray:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.forward(*args, **kwargs)

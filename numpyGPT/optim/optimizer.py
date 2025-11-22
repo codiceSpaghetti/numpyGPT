@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 from ..nn.modules.module import Module
 
@@ -19,5 +18,6 @@ class Optimizer(ABC):
         for module in self.params:
             grads = module.grads()
             for grad_key in grads:
-                if grads[grad_key] is not None:
-                    grads[grad_key].fill(0.0)
+                grad = grads[grad_key]
+                if grad is not None:
+                    grad.fill(0.0)

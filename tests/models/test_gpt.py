@@ -55,7 +55,7 @@ class TestGPT(unittest.TestCase):
         grads = model.grads()
         self.assertGreater(len(grads), 0)
 
-        for grad_name, grad_value in grads.items():
+        for _grad_name, grad_value in grads.items():
             self.assertIsNotNone(grad_value)
 
     def test_gpt_generate(self):
@@ -96,7 +96,5 @@ class TestGPT(unittest.TestCase):
             self.assertIn(param_name, grads)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

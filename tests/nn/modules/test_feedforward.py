@@ -39,7 +39,5 @@ class TestFeedForward(unittest.TestCase):
         self.assertEqual(len(grads), 4)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

@@ -26,7 +26,10 @@ class Embedding(Module):
         # We add the gradients to the corresponding rows of the weight matrix W.
         # Since Z[i, j] = W[X[i, j]], the gradient ∂L/∂W[k] is the sum of ∂L/∂Z[i, j]
         # over all (i, j) where X[i, j] == k.
-        np.add.at(self.dW, X.flatten(), dZ.reshape(-1, self.embed_dim))  # in place accumulation for efficiency
+        if X is not None:
+            np.add.at(
+                self.dW, X.flatten(), dZ.reshape(-1, self.embed_dim)
+            )  # in place accumulation for efficiency
 
     def params(self) -> dict[str, ndarray]:
         return {"W": self.W}

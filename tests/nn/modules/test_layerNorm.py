@@ -17,7 +17,7 @@ class TestLayerNorm(unittest.TestCase):
         out = layer(X)
         self.assertEqual(out.shape, (batch_size, seq_len, hidden_dim))
 
-        X_norm = layer.cache['X_norm']
+        X_norm = layer.cache["X_norm"]
         mean = np.mean(X_norm, axis=-1)
         var = np.var(X_norm, axis=-1)
         self.assertTrue(np.allclose(mean, np.zeros_like(mean), atol=1e-6))
@@ -47,7 +47,5 @@ class TestLayerNorm(unittest.TestCase):
         self.assertIn("beta", grads)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

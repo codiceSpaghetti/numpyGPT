@@ -70,14 +70,14 @@ class TestWarmupCosineLR(unittest.TestCase):
 
         # Warmup phase: should be increasing
         for i in range(1, 4):
-            self.assertGreater(lr_history[i], lr_history[i-1])
+            self.assertGreater(lr_history[i], lr_history[i - 1])
 
         # Should reach approximately base_lr at end of warmup
         self.assertGreater(lr_history[4], 0.09)  # Close to 0.1
 
         # Decay phase: should be decreasing (stop before reaching min_lr)
         for i in range(4, 10):
-            self.assertGreater(lr_history[i], lr_history[i+1])
+            self.assertGreater(lr_history[i], lr_history[i + 1])
 
         # Min lr phase: should stay constant
         for i in range(11, 16):
@@ -104,9 +104,9 @@ class TestWarmupCosineLR(unittest.TestCase):
 
         lr_history = [optimizer.lr]
 
-        for epoch in range(10):
+        for _ in range(10):
             y_pred = layer.forward(X)
-            loss = np.mean((y_pred - y) ** 2)
+            _ = np.mean((y_pred - y) ** 2)
 
             dY = 2 * (y_pred - y) / len(X)
             layer.backward(dY)
@@ -133,7 +133,5 @@ class TestWarmupCosineLR(unittest.TestCase):
             self.assertAlmostEqual(lr, 0.01, places=6)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

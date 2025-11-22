@@ -36,7 +36,5 @@ class TestTransformerBlock(unittest.TestCase):
         self.assertEqual(dX.shape, (batch_size, seq_len, d_model))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

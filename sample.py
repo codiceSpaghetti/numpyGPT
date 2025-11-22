@@ -10,26 +10,33 @@ from numpyGPT.models.GPT import GPT
 from numpyGPT.utils.training import setup_logger
 
 
-def sample_from_model(model_path: str, data_dir: str, num_samples: int = 1, max_new_tokens: int = 500,
-                      temperature: float = 0.8, start_text: str = "\n", seed: int = 1337) -> None:
-    logger = setup_logger('sample')
+def sample_from_model(
+    model_path: str,
+    data_dir: str,
+    num_samples: int = 1,
+    max_new_tokens: int = 500,
+    temperature: float = 0.8,
+    start_text: str = "\n",
+    seed: int = 1337,
+) -> None:
+    logger = setup_logger("sample")
     np.random.seed(seed)
 
     logger.info(f"Loading model from {model_path}")
-    with open(model_path, 'rb') as f:
+    with open(model_path, "rb") as f:
         checkpoint = pickle.load(f)
 
-    config = checkpoint['config']
+    config = checkpoint["config"]
     model = GPT(**config)
 
     model_params = model.params()
-    for name, param in checkpoint['model'].items():
+    for name, param in checkpoint["model"].items():
         model_params[name][:] = param
 
     logger.info("Model loaded")
 
-    tokenizer_path = os.path.join(data_dir, 'tokenizer.pkl')
-    with open(tokenizer_path, 'rb') as f:
+    tokenizer_path = os.path.join(data_dir, "tokenizer.pkl")
+    with open(tokenizer_path, "rb") as f:
         tokenizer = pickle.load(f)
 
     logger.info(f"Vocab size: {tokenizer.vocab_size}")
@@ -44,23 +51,23 @@ def sample_from_model(model_path: str, data_dir: str, num_samples: int = 1, max_
     for k in range(num_samples):
         y = model.generate(x, max_new_tokens, temperature=temperature, eos_token_id=eos_token_id)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print(f"SAMPLE {k+1}/{num_samples}")
-        print("="*60)
+        print("=" * 60)
         decoded_text = tokenizer.decode(y[0].tolist())
         print(decoded_text)
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', default='out/char/best_model.pkl')
-    parser.add_argument('--data_dir', default='data/shakespeare_char')
-    parser.add_argument('--num_samples', type=int, default=1)
-    parser.add_argument('--max_new_tokens', type=int, default=500)
-    parser.add_argument('--temperature', type=float, default=0.8)
-    parser.add_argument('--start', default="KING")
-    parser.add_argument('--seed', type=int, default=1337)
+    parser.add_argument("--model_path", default="out/char/best_model.pkl")
+    parser.add_argument("--data_dir", default="data/shakespeare_char")
+    parser.add_argument("--num_samples", type=int, default=1)
+    parser.add_argument("--max_new_tokens", type=int, default=500)
+    parser.add_argument("--temperature", type=float, default=0.8)
+    parser.add_argument("--start", default="KING")
+    parser.add_argument("--seed", type=int, default=1337)
     args = parser.parse_args()
 
     if not os.path.exists(args.data_dir):
@@ -77,5 +84,5 @@ if __name__ == '__main__':
         max_new_tokens=args.max_new_tokens,
         temperature=args.temperature,
         start_text=args.start,
-        seed=args.seed
+        seed=args.seed,
     )

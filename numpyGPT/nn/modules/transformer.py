@@ -1,9 +1,10 @@
+from numpy import ndarray
+
 from .attention import MultiHeadAttention
 from .feedforward import FeedForward
 from .layerNorm import LayerNorm
 from .module import Module
 
-from numpy import ndarray
 
 class TransformerBlock(Module):
     def __init__(self, d_model: int, n_heads: int, d_ff: int):
@@ -55,8 +56,8 @@ class TransformerBlock(Module):
         params.update({f"ln2.{k}": v for k, v in self.ln2.params().items()})
         return params
 
-    def grads(self) -> dict[str, ndarray]:
-        grads = {}
+    def grads(self) -> dict[str, ndarray | None]:
+        grads: dict[str, ndarray | None] = {}
         grads.update({f"attn.{k}": v for k, v in self.attn.grads().items()})
         grads.update({f"ln1.{k}": v for k, v in self.ln1.grads().items()})
         grads.update({f"ffn.{k}": v for k, v in self.ffn.grads().items()})

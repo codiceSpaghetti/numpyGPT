@@ -6,30 +6,32 @@ import pickle
 
 import numpy as np
 
-from numpyGPT.tokenizer.bpe import BPETokenizer
-from numpyGPT.tokenizer.char_level import CharTokenizer
-from numpyGPT.tokenizer.word_level import WordTokenizer
+from numpyGPT.tokenizer import BPETokenizer, CharTokenizer, Tokenizer, WordTokenizer
 
 
-def prepare_data(input_file: str, output_dir: str, tokenizer_type: str = 'char', train_split: float = 0.9,
-                 min_freq: int = 1, max_vocab_size: int | None = 1000) -> CharTokenizer | WordTokenizer | BPETokenizer:
+def prepare_data(
+    input_file: str,
+    output_dir: str,
+    tokenizer_type: str = "char",
+    train_split: float = 0.9,
+    min_freq: int = 1,
+    max_vocab_size: int | None = 1000,
+) -> Tokenizer:
     print(f"Reading {input_file}...")
-    with open(input_file, 'r', encoding='utf-8') as f:
+    with open(input_file, encoding="utf-8") as f:
         text = f.read()
 
     print(f"Data length: {len(text):,} characters")
 
-    if tokenizer_type == 'char':
+    tokenizer: Tokenizer
+    if tokenizer_type == "char":
         tokenizer = CharTokenizer()
-    elif tokenizer_type == 'word':
-        tokenizer = WordTokenizer(
-            min_freq=min_freq,
-            max_vocab_size=max_vocab_size
-        )
-    elif tokenizer_type == 'bpe':
-        tokenizer = BPETokenizer(
-            vocab_size=max_vocab_size
-        )
+    elif tokenizer_type == "word":
+        tokenizer = WordTokenizer(min_freq=min_freq, max_vocab_size=max_vocab_size)
+    elif tokenizer_type == "bpe":
+        if max_vocab_size is None:
+            raise ValueError("max_vocab_size must be provided for BPE tokenizer")
+        tokenizer = BPETokenizer(vocab_size=max_vocab_size)
     else:
         raise ValueError(f"Unknown tokenizer type: {tokenizer_type}")
 
@@ -48,24 +50,26 @@ def prepare_data(input_file: str, output_dir: str, tokenizer_type: str = 'char',
 
     os.makedirs(output_dir, exist_ok=True)
 
-    train_data.tofile(os.path.join(output_dir, 'train.bin'))
-    val_data.tofile(os.path.join(output_dir, 'val.bin'))
+    train_data.tofile(os.path.join(output_dir, "train.bin"))
+    val_data.tofile(os.path.join(output_dir, "val.bin"))
 
-    with open(os.path.join(output_dir, 'tokenizer.pkl'), 'wb') as f:
+    with open(os.path.join(output_dir, "tokenizer.pkl"), "wb") as f:
         pickle.dump(tokenizer, f)
 
     print("Done.")
     return tokenizer
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_file', default='data/shakespeare.txt', help='path to input text file')
-    parser.add_argument('--output_dir', default='data/shakespeare_char', help='output directory')
-    parser.add_argument('--tokenizer_type', choices=['char', 'word', 'bpe'], default='char')
-    parser.add_argument('--train_split', type=float, default=0.9)
-    parser.add_argument('--min_freq', type=int, default=1)
-    parser.add_argument('--max_vocab_size', type=int, default=None)
+    parser.add_argument(
+        "--input_file", default="data/shakespeare.txt", help="path to input text file"
+    )
+    parser.add_argument("--output_dir", default="data/shakespeare_char", help="output directory")
+    parser.add_argument("--tokenizer_type", choices=["char", "word", "bpe"], default="char")
+    parser.add_argument("--train_split", type=float, default=0.9)
+    parser.add_argument("--min_freq", type=int, default=1)
+    parser.add_argument("--max_vocab_size", type=int, default=None)
     args = parser.parse_args()
 
     prepare_data(
@@ -74,5 +78,5 @@ if __name__ == '__main__':
         args.tokenizer_type,
         args.train_split,
         args.min_freq,
-        args.max_vocab_size
+        args.max_vocab_size,
     )

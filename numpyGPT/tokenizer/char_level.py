@@ -4,25 +4,27 @@ class CharTokenizer:
         self.stoi: dict[str, int] = {}
         self.itos: dict[int, str] = {}
 
-    def build_vocab(self, text: str) -> None:
+    def build_vocab(self, text: str | list[str]) -> None:
+        if isinstance(text, list):
+            text = "".join(text)
         chars = sorted(set(text))
-        self.chars = ['<pad>', '<unk>', '<bos>', '<eos>'] + chars
+        self.chars = ["<pad>", "<unk>", "<bos>", "<eos>"] + chars
         self.stoi = {ch: i for i, ch in enumerate(self.chars)}
-        self.itos = {i: ch for i, ch in enumerate(self.chars)}
+        self.itos = dict(enumerate(self.chars))
 
     def encode(self, text: str, add_bos: bool = True, add_eos: bool = True) -> list[int]:
         tokens = [self.stoi.get(ch, 1) for ch in text]
         if add_bos:
-            tokens = [self.stoi['<bos>']] + tokens
+            tokens = [self.stoi["<bos>"]] + tokens
         if add_eos:
-            tokens = tokens + [self.stoi['<eos>']]
+            tokens = tokens + [self.stoi["<eos>"]]
         return tokens
 
     def decode(self, tokens: list[int]) -> str:
         chars = [self.itos[t] for t in tokens if t in self.itos]
-        text = ''.join(chars)
-        for special in ['<bos>', '<eos>', '<pad>', '<unk>']:
-            text = text.replace(special, '')
+        text = "".join(chars)
+        for special in ["<bos>", "<eos>", "<pad>", "<unk>"]:
+            text = text.replace(special, "")
         return text
 
     @property

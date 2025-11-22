@@ -7,10 +7,6 @@ from numpyGPT.nn.modules.activation import LeakyReLU, ReLU, Softmax
 
 class TestReLU(unittest.TestCase):
     def test_relu_forward(self):
-        batch_size = 2
-        seq_len = 3
-        d_model = 4
-
         layer = ReLU()
         X = np.array([[-1, 0, 1, 2], [3, -2, 0.5, -0.5]])
 
@@ -21,10 +17,6 @@ class TestReLU(unittest.TestCase):
         self.assertTrue(np.allclose(out, expected))
 
     def test_relu_backward(self):
-        batch_size = 2
-        seq_len = 3
-        d_model = 4
-
         layer = ReLU()
         X = np.array([[-1, 0, 1, 2], [3, -2, 0.5, -0.5]])
         dZ = np.ones_like(X)
@@ -125,7 +117,7 @@ class TestSoftmax(unittest.TestCase):
         X_reshaped = X.reshape(-1, vocab_size)
         dZ_reshaped = dZ.reshape(-1, vocab_size)
 
-        probs = softmax(X_reshaped)
+        _ = softmax(X_reshaped)
         dX = softmax.backward(dZ_reshaped)
 
         self.assertEqual(dX.shape, X_reshaped.shape)
@@ -149,7 +141,5 @@ class TestSoftmax(unittest.TestCase):
         self.assertTrue(np.allclose(dX, expected_dX))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
-

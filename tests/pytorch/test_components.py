@@ -15,7 +15,6 @@ from numpyGPT.optim.adam import Adam
 
 
 class TestComponents(unittest.TestCase):
-
     def setUp(self):
         np.random.seed(42)
         torch.manual_seed(42)
@@ -69,7 +68,9 @@ class TestComponents(unittest.TestCase):
         np_embedding.backward(grad_output)
         out_torch.backward(grad_output_torch)
 
-        self.assertTrue(np.allclose(np_embedding.dW, torch_embedding.weight.grad.numpy(), atol=1e-5))
+        self.assertTrue(
+            np.allclose(np_embedding.dW, torch_embedding.weight.grad.numpy(), atol=1e-5)
+        )
 
     def test_layernorm(self):
         batch_size, seq_len, hidden_dim = 2, 5, 8
@@ -95,8 +96,12 @@ class TestComponents(unittest.TestCase):
         out_torch.backward(grad_output_torch)
 
         self.assertTrue(np.allclose(grad_input_np, x_torch.grad.numpy(), atol=1e-4))
-        self.assertTrue(np.allclose(np_layernorm.dgamma, torch_layernorm.weight.grad.numpy(), atol=1e-4))
-        self.assertTrue(np.allclose(np_layernorm.dbeta, torch_layernorm.bias.grad.numpy(), atol=1e-4))
+        self.assertTrue(
+            np.allclose(np_layernorm.dgamma, torch_layernorm.weight.grad.numpy(), atol=1e-4)
+        )
+        self.assertTrue(
+            np.allclose(np_layernorm.dbeta, torch_layernorm.bias.grad.numpy(), atol=1e-4)
+        )
 
     def test_relu(self):
         np_relu = ReLU()
@@ -187,12 +192,8 @@ class TestComponents(unittest.TestCase):
         np_mha.W_v.W = np.random.randn(d_model, d_model) * scale
         np_mha.W_o.W = np.random.randn(d_model, d_model) * scale
 
-        qkv_weight = np.concatenate([
-            np_mha.W_q.W.T, np_mha.W_k.W.T, np_mha.W_v.W.T
-        ], axis=0)
-        qkv_bias = np.concatenate([
-            np_mha.W_q.b, np_mha.W_k.b, np_mha.W_v.b
-        ])
+        qkv_weight = np.concatenate([np_mha.W_q.W.T, np_mha.W_k.W.T, np_mha.W_v.W.T], axis=0)
+        qkv_bias = np.concatenate([np_mha.W_q.b, np_mha.W_k.b, np_mha.W_v.b])
 
         torch_mha.in_proj_weight.data = torch.from_numpy(qkv_weight).float()
         torch_mha.in_proj_bias.data = torch.from_numpy(qkv_bias).float()
@@ -203,7 +204,7 @@ class TestComponents(unittest.TestCase):
         x_torch = torch.from_numpy(x_np).requires_grad_(True)
 
         mask_np = np.triu(np.ones((seq_len, seq_len)) * -np.inf, k=1)
-        mask_torch = torch.triu(torch.ones(seq_len, seq_len) * float('-inf'), diagonal=1)
+        mask_torch = torch.triu(torch.ones(seq_len, seq_len) * float("-inf"), diagonal=1)
 
         out_np = np_mha(x_np, mask=mask_np)
         out_torch, _ = torch_mha(x_torch, x_torch, x_torch, attn_mask=mask_torch)
@@ -226,7 +227,9 @@ class TestComponents(unittest.TestCase):
         torch_linear.bias.data = torch.from_numpy(np_linear.b).float()
 
         np_adam = Adam([np_linear], lr=0.001, betas=(0.9, 0.999), eps=1e-8)
-        torch_adam = torch.optim.Adam(torch_linear.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
+        torch_adam = torch.optim.Adam(
+            torch_linear.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8
+        )
 
         x = np.random.randn(3, 4).astype(np.float32)
         y_true = np.array([0, 1, 0])
@@ -234,7 +237,7 @@ class TestComponents(unittest.TestCase):
         x_torch = torch.from_numpy(x)
         y_true_torch = torch.from_numpy(y_true).long()
 
-        for step in range(3):
+        for _step in range(3):
             out_np = np_linear(x)
             softmax = Softmax()
             probs_np = softmax(out_np)
@@ -265,5 +268,5 @@ class TestComponents(unittest.TestCase):
             self.assertTrue(np.allclose(b_update_np, b_update_torch.numpy(), atol=1e-6))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)
