@@ -1,13 +1,9 @@
-import os
-import sys
 import unittest
 
 import numpy as np
 
 from numpyGPT.nn.modules import Linear
 from numpyGPT.optim import Adam, Optimizer
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
 class TestOptimizer(unittest.TestCase):
@@ -123,3 +119,5 @@ class TestAdam(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+

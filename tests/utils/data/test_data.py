@@ -1,14 +1,11 @@
 import os
 import pickle
-import sys
 import tempfile
 import unittest
 
 import numpy as np
 
 from numpyGPT.utils.data import DataLoader
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
 class MockTokenizer:
@@ -91,3 +88,5 @@ class TestDataLoader(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
