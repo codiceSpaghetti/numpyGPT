@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "numpygpt"
+version = "0.1.0"
+description = "A from-scratch GPT built with NumPy and Python’s standard library. No autograd, no frameworks: every layer is re-implemented with its own forward and backward pass. Gradients are computed manually, updates are transparent, and every operation is spelled out."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.5",
+    "pytest>=9.0.1",
+    "torch>=2.9.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=4.0.1",
+    "ruff>=0.8.4",
+    "mypy>=1.13.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "T",   # flake8-debugger (catches pdb, breakpoint, etc.)
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports in __init__.py
+"datagen.py" = ["T201"]  # print statements allowed in scripts
+"plot.py" = ["T201"]  # print statements allowed in scripts
+"sample.py" = ["T201"]  # print statements allowed in scripts
+"test.py" = ["T201"]  # print statements allowed in scripts
+"train.py" = ["T201"]  # print statements allowed in scripts
+
+[tool.ruff.lint.isort]
+known-first-party = ["numpyGPT"]
+force-single-line = false
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.14"
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+ignore_missing_imports = true
+follow_imports = "silent"
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["numpyGPT*"]
+exclude = ["tests*", "docs*", "assets*", "data*"]
