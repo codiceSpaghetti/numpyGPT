@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import ndarray
 
 from .activation import Softmax
 from .linear import Linear
@@ -10,22 +11,22 @@ class MultiHeadAttention(Module):
     Multi-Head Attention (Attention is All You Need <3): https://arxiv.org/abs/1706.03762
     """
 
-    def __init__(self, d_model, n_heads):
+    def __init__(self, d_model: int, n_heads: int) -> None:
         super().__init__()
         assert d_model % n_heads == 0
-        self.d_model = d_model
-        self.n_heads = n_heads
-        self.d_k = d_model // n_heads
+        self.d_model: int = d_model
+        self.n_heads: int = n_heads
+        self.d_k: int = d_model // n_heads
 
-        self.W_q = Linear(d_model, d_model)
-        self.W_k = Linear(d_model, d_model)
-        self.W_v = Linear(d_model, d_model)
-        self.W_o = Linear(d_model, d_model)
-        self.softmax = Softmax()
+        self.W_q: Linear = Linear(d_model, d_model)
+        self.W_k: Linear = Linear(d_model, d_model)
+        self.W_v: Linear = Linear(d_model, d_model)
+        self.W_o: Linear = Linear(d_model, d_model)
+        self.softmax: Softmax = Softmax()
 
-        self.cache = {}
+        self.cache: dict[str, ndarray | tuple] = {}
 
-    def forward(self, X, mask=None):
+    def forward(self, X: ndarray, mask: ndarray | None = None) -> ndarray:
         B, T, C = X.shape
 
         Q = self.W_q(X)  # (B, T, C)
@@ -59,7 +60,7 @@ class MultiHeadAttention(Module):
 
         return output
 
-    def backward(self, dZ):
+    def backward(self, dZ: ndarray) -> ndarray:
         X, Q, K, V = self.cache['X'], self.cache['Q'], self.cache['K'], self.cache['V']
         attn_weights = self.cache['attn_weights']
         original_shape = self.cache['original_shape']
@@ -95,7 +96,7 @@ class MultiHeadAttention(Module):
 
         return dX_q + dX_k + dX_v  # ∂L/∂X = sum of all paths
 
-    def params(self):
+    def params(self) -> dict[str, ndarray]:
         params = {}
         params.update({f"W_q.{k}": v for k, v in self.W_q.params().items()})
         params.update({f"W_k.{k}": v for k, v in self.W_k.params().items()})
@@ -103,7 +104,7 @@ class MultiHeadAttention(Module):
         params.update({f"W_o.{k}": v for k, v in self.W_o.params().items()})
         return params
 
-    def grads(self):
+    def grads(self) -> dict[str, ndarray | None]:
         grads = {}
         grads.update({f"W_q.{k}": v for k, v in self.W_q.grads().items()})
         grads.update({f"W_k.{k}": v for k, v in self.W_k.grads().items()})

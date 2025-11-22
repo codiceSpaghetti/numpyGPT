@@ -1,24 +1,25 @@
 import numpy as np
+from numpy import ndarray
 
 from .module import Module
 
 
 class Embedding(Module):
-    def __init__(self, vocab_size, embed_dim):
+    def __init__(self, vocab_size: int, embed_dim: int) -> None:
         super().__init__()
-        self.vocab_size = vocab_size
-        self.embed_dim = embed_dim
+        self.vocab_size: int = vocab_size
+        self.embed_dim: int = embed_dim
 
-        self.W = np.random.randn(vocab_size, embed_dim) * 0.02
-        self.dW = None
-        self.cache_input = None
+        self.W: ndarray = np.random.randn(vocab_size, embed_dim) * 0.02
+        self.dW: ndarray | None = None
+        self.cache_input: ndarray | None = None
 
-    def forward(self, X):
+    def forward(self, X: ndarray) -> ndarray:
         self.cache_input = X  # (B, T)
         out = self.W[X]  # (B, T, embed_dim)
         return out
 
-    def backward(self, dZ):
+    def backward(self, dZ: ndarray) -> None:
         self.dW = np.zeros_like(self.W)
         X = self.cache_input
 
@@ -27,8 +28,8 @@ class Embedding(Module):
         # over all (i, j) where X[i, j] == k.
         np.add.at(self.dW, X.flatten(), dZ.reshape(-1, self.embed_dim))  # in place accumulation for efficiency
 
-    def params(self):
+    def params(self) -> dict[str, ndarray]:
         return {"W": self.W}
 
-    def grads(self):
+    def grads(self) -> dict[str, ndarray | None]:
         return {"W": self.dW}

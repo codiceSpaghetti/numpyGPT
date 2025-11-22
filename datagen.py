@@ -11,8 +11,8 @@ from numpyGPT.tokenizer.char_level import CharTokenizer
 from numpyGPT.tokenizer.word_level import WordTokenizer
 
 
-def prepare_data(input_file, output_dir, tokenizer_type='char', train_split=0.9,
-                 min_freq=1, max_vocab_size=1000):
+def prepare_data(input_file: str, output_dir: str, tokenizer_type: str = 'char', train_split: float = 0.9,
+                 min_freq: int = 1, max_vocab_size: int | None = 1000) -> CharTokenizer | WordTokenizer | BPETokenizer:
     print(f"Reading {input_file}...")
     with open(input_file, 'r', encoding='utf-8') as f:
         text = f.read()

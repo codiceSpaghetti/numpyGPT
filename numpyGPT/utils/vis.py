@@ -6,9 +6,9 @@ import numpy as np
 
 
 class MetricsLogger:
-    def __init__(self, log_file='metrics.json'):
-        self.log_file = log_file
-        self.metrics = {
+    def __init__(self, log_file: str = 'metrics.json') -> None:
+        self.log_file: str = log_file
+        self.metrics: dict[str, list[int | float | None]] = {
             'iterations': [],
             'train_loss': [],
             'val_loss': [],
@@ -20,7 +20,7 @@ class MetricsLogger:
             with open(log_file, 'r') as f:
                 self.metrics = json.load(f)
 
-    def log(self, iter_num, train_loss=None, val_loss=None, grad_norm=None, lr=None):
+    def log(self, iter_num: int, train_loss: float | None = None, val_loss: float | None = None, grad_norm: float | None = None, lr: float | None = None) -> None:
         self.metrics['iterations'].append(iter_num)
         self.metrics['train_loss'].append(train_loss)
         self.metrics['val_loss'].append(val_loss)
@@ -30,7 +30,7 @@ class MetricsLogger:
         with open(self.log_file, 'w') as f:
             json.dump(self.metrics, f)
 
-    def plot(self, save_path='training_curves.png'):
+    def plot(self, save_path: str = 'training_curves.png') -> str:
         fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
         iters = np.array(self.metrics['iterations'])

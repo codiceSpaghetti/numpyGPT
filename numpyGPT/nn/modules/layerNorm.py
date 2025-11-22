@@ -1,22 +1,23 @@
 import numpy as np
+from numpy import ndarray
 
 from .module import Module
 
 
 class LayerNorm(Module):
-    def __init__(self, d_model, eps=1e-5):
+    def __init__(self, d_model: int, eps: float = 1e-5) -> None:
         super().__init__()
-        self.d_model = d_model
-        self.eps = eps
+        self.d_model: int = d_model
+        self.eps: float = eps
 
-        self.gamma = np.ones(d_model)
-        self.beta = np.zeros(d_model)
+        self.gamma: ndarray = np.ones(d_model)
+        self.beta: ndarray = np.zeros(d_model)
 
-        self.dgamma = None
-        self.dbeta = None
-        self.cache = {}
+        self.dgamma: ndarray | None = None
+        self.dbeta: ndarray | None = None
+        self.cache: dict[str, ndarray] = {}
 
-    def forward(self, X):
+    def forward(self, X: ndarray) -> ndarray:
         mean = np.mean(X, axis=-1, keepdims=True)  # (B, T, 1)
         var = np.var(X, axis=-1, keepdims=True)  # (B, T, 1)
 
@@ -33,7 +34,7 @@ class LayerNorm(Module):
 
         return out
 
-    def backward(self, dZ):
+    def backward(self, dZ: ndarray) -> ndarray:
         X = self.cache['X']
         mean = self.cache['mean']
         var = self.cache['var']
@@ -64,8 +65,8 @@ class LayerNorm(Module):
 
         return dX
 
-    def params(self):
+    def params(self) -> dict[str, ndarray]:
         return {"gamma": self.gamma, "beta": self.beta}
 
-    def grads(self):
+    def grads(self) -> dict[str, ndarray | None]:
         return {"gamma": self.dgamma, "beta": self.dbeta}

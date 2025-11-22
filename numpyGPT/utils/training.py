@@ -4,8 +4,10 @@ import time
 
 import numpy as np
 
+from ..nn.modules.module import Module
 
-def setup_logger(name='train', level=logging.INFO):
+
+def setup_logger(name: str = 'train', level: int = logging.INFO) -> logging.Logger:
     formatter = logging.Formatter(
         fmt='%(asctime)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
@@ -20,7 +22,7 @@ def setup_logger(name='train', level=logging.INFO):
     return logger
 
 
-def clip_grad_norm(model, max_norm):
+def clip_grad_norm(model: Module, max_norm: float) -> float:
     total_norm = 0.0
     grads = model.grads()
 
@@ -37,20 +39,20 @@ def clip_grad_norm(model, max_norm):
             if grad is not None:
                 grad *= clip_coef
 
-    return total_norm
+    return float(total_norm)
 
 
-def get_lr(optimizer):
+def get_lr(optimizer: 'Optimizer') -> float:  # type: ignore
     return optimizer.lr
 
 
 class TrainingMonitor:
-    def __init__(self, log_interval=100):
-        self.log_interval = log_interval
-        self.step_times = []
-        self.losses = []
+    def __init__(self, log_interval: int = 100) -> None:
+        self.log_interval: int = log_interval
+        self.step_times: list[float] = []
+        self.losses: list[float] = []
 
-    def log_step(self, iter_num, loss, lr, grad_norm=None):
+    def log_step(self, iter_num: int, loss: float, lr: float, grad_norm: float | None = None) -> str | None:
         if iter_num % self.log_interval == 0:
             step_time = time.time() if len(self.step_times) == 0 else time.time() - self.step_times[-1]
             self.step_times.append(time.time())
@@ -65,7 +67,7 @@ class TrainingMonitor:
             return msg
         return None
 
-    def get_avg_loss(self, window=100):
+    def get_avg_loss(self, window: int = 100) -> float:
         if len(self.losses) == 0:
             return 0.0
-        return np.mean(self.losses[-window:])
+        return float(np.mean(self.losses[-window:]))

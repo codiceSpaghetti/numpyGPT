@@ -6,7 +6,7 @@ import os
 from numpyGPT.utils.vis import MetricsLogger
 
 
-def plot_metrics(out_dir='out/char', output_file=None):
+def plot_metrics(out_dir: str = 'out/char', output_file: str | None = None) -> None:
     metrics_file = os.path.join(out_dir, 'metrics.json')
 
     if not os.path.exists(metrics_file):

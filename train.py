@@ -66,7 +66,7 @@ monitor = TrainingMonitor(log_interval)
 metrics = MetricsLogger(os.path.join(out_dir, 'metrics.json'))
 
 
-def save_model(filepath, model, iter_num, val_loss=None, optimizer_state=None):
+def save_model(filepath: str, model: GPT, iter_num: int, val_loss: float | None = None, optimizer_state: dict | None = None) -> None:
     model_data = {
         'model': model.params(),
         'iter_num': iter_num,
@@ -91,7 +91,7 @@ def save_model(filepath, model, iter_num, val_loss=None, optimizer_state=None):
         pickle.dump(model_data, f)
 
 
-def estimate_loss():
+def estimate_loss() -> dict[str, float]:
     model.eval()
     out = {}
     for split in ['train', 'val']:

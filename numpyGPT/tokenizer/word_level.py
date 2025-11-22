@@ -2,14 +2,14 @@ import re
 
 
 class WordTokenizer:
-    def __init__(self, min_freq=1, max_vocab_size=None):
-        self.min_freq = min_freq
-        self.max_vocab_size = max_vocab_size
-        self.words = []
-        self.stoi = {}
-        self.itos = {}
+    def __init__(self, min_freq: int = 1, max_vocab_size: int | None = None) -> None:
+        self.min_freq: int = min_freq
+        self.max_vocab_size: int | None = max_vocab_size
+        self.words: list[str] = []
+        self.stoi: dict[str, int] = {}
+        self.itos: dict[int, str] = {}
 
-    def build_vocab(self, text):
+    def build_vocab(self, text: str) -> None:
         text = text.replace('\n', ' <|newline|> ')
         text = text.replace('\t', ' <|tab|> ')
         text = text.replace('\r', ' <|carriage_return|> ')
@@ -35,7 +35,7 @@ class WordTokenizer:
         self.stoi = {word: i for i, word in enumerate(self.words)}
         self.itos = {i: word for i, word in enumerate(self.words)}
 
-    def encode(self, text, add_bos=True, add_eos=True):
+    def encode(self, text: str, add_bos: bool = True, add_eos: bool = True) -> list[int]:
         text = text.replace('\n', ' <|newline|> ')
         text = text.replace('\t', ' <|tab|> ')
         text = text.replace('\r', ' <|carriage_return|> ')
@@ -50,7 +50,7 @@ class WordTokenizer:
             indices = indices + [3]
         return indices
 
-    def decode(self, tokens):
+    def decode(self, tokens: list[int]) -> str:
         words = [self.itos[t] for t in tokens if t in self.itos]
 
         for special in ['<bos>', '<eos>', '<pad>', '<unk>']:
@@ -83,13 +83,13 @@ class WordTokenizer:
         return text.strip()
 
     @property
-    def vocab_size(self):
+    def vocab_size(self) -> int:
         return len(self.words)
 
     @property
-    def eos_token_id(self):
+    def eos_token_id(self) -> int:
         return 3
 
     @property
-    def bos_token_id(self):
+    def bos_token_id(self) -> int:
         return 2

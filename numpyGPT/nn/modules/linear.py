@@ -1,13 +1,14 @@
 import numpy as np
+from numpy import ndarray
 
 from .module import Module
 
 
 class Linear(Module):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features: int, out_features: int) -> None:
         super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
+        self.in_features: int = in_features
+        self.out_features: int = out_features
 
         # Xavier/Glorot, Best for tanh/sigmoid, https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
         # He/Kaiming, Best for ReLU/LeakyReLU, https://arxiv.org/abs/1502.01852
@@ -16,14 +17,14 @@ class Linear(Module):
         # Using He/Kaiming since we have ReLU and LeakyReLU activations
         scale = np.sqrt(2.0 / in_features)
 
-        self.W = np.random.randn(in_features, out_features) * scale
-        self.b = np.zeros(out_features)
+        self.W: ndarray = np.random.randn(in_features, out_features) * scale
+        self.b: ndarray = np.zeros(out_features)
 
-        self.dW = None
-        self.db = None
-        self.cache_input = None
+        self.dW: ndarray | None = None
+        self.db: ndarray | None = None
+        self.cache_input: ndarray | None = None
 
-    def forward(self, X):
+    def forward(self, X: ndarray) -> ndarray:
         self.cache_input = X
 
         if X.ndim == 3:
@@ -36,7 +37,7 @@ class Linear(Module):
             out = X @ self.W + self.b  # (B, out_features)
             return out
 
-    def backward(self, dZ):
+    def backward(self, dZ: ndarray) -> ndarray:
         X = self.cache_input
 
         if X.ndim == 3:
@@ -56,8 +57,8 @@ class Linear(Module):
             self.db = np.sum(dZ, axis=0)  # ∂L/∂b = Σ ∂L/∂Y
             return dZ @ self.W.T  # ∂L/∂X = ∂L/∂Y @ W^T
 
-    def params(self):
+    def params(self) -> dict[str, ndarray]:
         return {"W": self.W, "b": self.b}
 
-    def grads(self):
+    def grads(self) -> dict[str, ndarray | None]:
         return {"W": self.dW, "b": self.db}

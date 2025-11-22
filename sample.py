@@ -10,8 +10,8 @@ from numpyGPT.models.GPT import GPT
 from numpyGPT.utils.training import setup_logger
 
 
-def sample_from_model(model_path, data_dir, num_samples=1, max_new_tokens=500,
-                      temperature=0.8, start_text="\n", seed=1337):
+def sample_from_model(model_path: str, data_dir: str, num_samples: int = 1, max_new_tokens: int = 500,
+                      temperature: float = 0.8, start_text: str = "\n", seed: int = 1337) -> None:
     logger = setup_logger('sample')
     np.random.seed(seed)
 

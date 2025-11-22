@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 
 """
 BPE learns subword vocab by iteratively merging most frequent adjacent pairs
-Start: "hello" -> ['h','e','l','l','o'] 
+Start: "hello" -> ['h','e','l','l','o']
 Find 'l','l' is most frequent pair -> merge to 'll'
 Result: "hello" -> ['h','e','ll','o']
 Repeat until vocab_size reached => meaningful subwords emerge naturally.
@@ -11,14 +11,14 @@ Repeat until vocab_size reached => meaningful subwords emerge naturally.
 
 
 class BPETokenizer:
-    def __init__(self, vocab_size=1000):
-        self.vocab_size = vocab_size
-        self.stoi = {}
-        self.itos = {}
-        self.merges = []
-        self.merge_ranks = {}
+    def __init__(self, vocab_size: int = 1000) -> None:
+        self.vocab_size: int = vocab_size
+        self.stoi: dict[str, int] = {}
+        self.itos: dict[int, str] = {}
+        self.merges: list[tuple[str, str]] = []
+        self.merge_ranks: dict[tuple[str, str], int] = {}
 
-    def _get_word_freqs(self, texts):
+    def _get_word_freqs(self, texts: str | list[str]) -> Counter[str]:
         if isinstance(texts, str):
             texts = [texts]
 
@@ -39,15 +39,15 @@ class BPETokenizer:
                 word_freqs[token] += 1
         return word_freqs
 
-    def _get_pairs(self, word):
-        pairs = set()
+    def _get_pairs(self, word: list[str]) -> set[tuple[str, str]]:
+        pairs: set[tuple[str, str]] = set()
         prev_char = word[0]
         for char in word[1:]:
             pairs.add((prev_char, char))
             prev_char = char
         return pairs
 
-    def _merge_word(self, word_tokens, pair):
+    def _merge_word(self, word_tokens: list[str], pair: tuple[str, str]) -> list[str]:
         new_tokens = []
         i = 0
         while i < len(word_tokens):
@@ -60,7 +60,7 @@ class BPETokenizer:
                 i += 1
         return new_tokens
 
-    def build_vocab(self, texts):
+    def build_vocab(self, texts: str | list[str]) -> None:
         word_freqs = self._get_word_freqs(texts)
 
         # Step 1: Initialize with character-level tokens
@@ -124,7 +124,7 @@ class BPETokenizer:
         self.itos = {idx: token for idx, token in enumerate(all_tokens)}
         self.vocab_size = len(self.stoi)
 
-    def _tokenize_word(self, word):
+    def _tokenize_word(self, word: str) -> list[str]:
         if word.startswith('<|') and word.endswith('|>'):
             return [word, '</w>']
 
@@ -143,7 +143,7 @@ class BPETokenizer:
 
         return word_tokens
 
-    def encode(self, text, add_bos=False, add_eos=False):
+    def encode(self, text: str, add_bos: bool = False, add_eos: bool = False) -> list[int]:
         text = text.replace('\n', ' <|newline|> ')
         text = text.replace('\t', ' <|tab|> ')
         text = text.replace('\r', ' <|carriage_return|> ')
@@ -165,7 +165,7 @@ class BPETokenizer:
 
         return indices
 
-    def decode(self, indices):
+    def decode(self, indices: list[int]) -> str:
         tokens = [self.itos.get(idx, '<unk>') for idx in indices]
 
         # Remove special tokens
@@ -206,9 +206,9 @@ class BPETokenizer:
         return text.strip()
 
     @property
-    def eos_token_id(self):
+    def eos_token_id(self) -> int:
         return 3
 
     @property
-    def bos_token_id(self):
+    def bos_token_id(self) -> int:
         return 2

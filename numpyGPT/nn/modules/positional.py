@@ -1,19 +1,20 @@
 import numpy as np
+from numpy import ndarray
 
 from .module import Module
 
 
 class PositionalEncoding(Module):
-    def __init__(self, max_len, d_model):
+    def __init__(self, max_len: int, d_model: int) -> None:
         super().__init__()
-        self.max_len = max_len
-        self.d_model = d_model
+        self.max_len: int = max_len
+        self.d_model: int = d_model
 
-        self.W = np.random.randn(max_len, d_model) * 0.02
-        self.dW = None
-        self.cache_input = None
+        self.W: ndarray = np.random.randn(max_len, d_model) * 0.02
+        self.dW: ndarray | None = None
+        self.cache_input: ndarray | None = None
 
-    def forward(self, X):
+    def forward(self, X: ndarray) -> ndarray:
         self.cache_input = X
         B, T, C = X.shape
 
@@ -21,7 +22,7 @@ class PositionalEncoding(Module):
         out = X + pos_emb  # (B, T, C)
         return out
 
-    def backward(self, dZ):
+    def backward(self, dZ: ndarray) -> ndarray:
         B, T, C = dZ.shape
         self.dW = np.zeros_like(self.W)
 
@@ -30,8 +31,8 @@ class PositionalEncoding(Module):
         self.dW[:T, :] = np.sum(dZ, axis=0)
         return dZ
 
-    def params(self):
+    def params(self) -> dict[str, ndarray]:
         return {"W": self.W}
 
-    def grads(self):
+    def grads(self) -> dict[str, ndarray | None]:
         return {"W": self.dW}

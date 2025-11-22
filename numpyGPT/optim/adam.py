@@ -1,5 +1,7 @@
 import numpy as np
+from numpy import ndarray
 
+from ..nn.modules.module import Module
 from .optimizer import Optimizer
 
 
@@ -8,14 +10,16 @@ class Adam(Optimizer):
     Adam optimizer: https://arxiv.org/abs/1412.6980
     """
 
-    def __init__(self, modules, lr=0.001, betas=(0.9, 0.999), eps=1e-8):
+    def __init__(self, modules: list[Module], lr: float = 0.001, betas: tuple[float, float] = (0.9, 0.999), eps: float = 1e-8) -> None:
         super().__init__(modules, lr)
+        self.beta1: float
+        self.beta2: float
         self.beta1, self.beta2 = betas
-        self.eps = eps
-        self.t = 0
+        self.eps: float = eps
+        self.t: int = 0
 
-        self.m = []
-        self.v = []
+        self.m: list[dict[str, ndarray]] = []
+        self.v: list[dict[str, ndarray]] = []
 
         for module in self.params:
             m_dict = {}
@@ -28,7 +32,7 @@ class Adam(Optimizer):
             self.m.append(m_dict)
             self.v.append(v_dict)
 
-    def step(self):
+    def step(self) -> None:
         self.t += 1
 
         for i, module in enumerate(self.params):

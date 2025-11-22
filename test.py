@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 
-def run_tests():
+def run_tests() -> bool:
     project_root = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, project_root)
 
@@ -21,7 +21,7 @@ def run_tests():
     return result.wasSuccessful()
 
 
-def demo_adam_optimizer():
+def demo_adam_optimizer() -> None:
     from numpyGPT.nn.modules import Linear
     from numpyGPT.optim import Adam
 
@@ -54,7 +54,7 @@ def demo_adam_optimizer():
     print("Expected: W≈[1, 1], b≈[1] for linear relation y = x1 + x2 + 1")
 
 
-def demo_lr_schedulers():
+def demo_lr_schedulers() -> None:
     from numpyGPT.nn.modules import Linear
     from numpyGPT.optim import Adam
     from numpyGPT.optim.lr_scheduler import WarmupCosineLR

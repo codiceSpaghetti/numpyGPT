@@ -1,7 +1,8 @@
 import numpy as np
+from numpy import ndarray
 
 
-def cross_entropy_loss(logits, targets, eps=1e-7):
+def cross_entropy_loss(logits: ndarray, targets: ndarray, eps: float = 1e-7) -> float:
     N = targets.shape[0]
 
     # logits -> log_softmax via log-sum-exp trick
@@ -12,4 +13,4 @@ def cross_entropy_loss(logits, targets, eps=1e-7):
     # negative log-likelihood: -log P(correct_class)
     nll = -log_softmax[np.arange(N), targets]
 
-    return np.mean(nll)
+    return float(np.mean(nll))

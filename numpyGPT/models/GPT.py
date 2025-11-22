@@ -14,21 +14,21 @@ class GPT(Module):
     Inspired by GPT-2 architecture: https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
     """
 
-    def __init__(self, vocab_size, max_len, d_model, n_heads, n_layers, d_ff):
+    def __init__(self, vocab_size: int, max_len: int, d_model: int, n_heads: int, n_layers: int, d_ff: int) -> None:
         super().__init__()
-        self.vocab_size = vocab_size
-        self.max_len = max_len
-        self.d_model = d_model
+        self.vocab_size: int = vocab_size
+        self.max_len: int = max_len
+        self.d_model: int = d_model
 
-        self.tok_emb = Embedding(vocab_size, d_model)
-        self.pos_emb = PositionalEncoding(max_len, d_model)
-        self.blocks = [TransformerBlock(d_model, n_heads, d_ff) for _ in range(n_layers)]
-        self.ln_f = LayerNorm(d_model)
-        self.lm_head = Linear(d_model, vocab_size)
+        self.tok_emb: Embedding = Embedding(vocab_size, d_model)
+        self.pos_emb: PositionalEncoding = PositionalEncoding(max_len, d_model)
+        self.blocks: list[TransformerBlock] = [TransformerBlock(d_model, n_heads, d_ff) for _ in range(n_layers)]
+        self.ln_f: LayerNorm = LayerNorm(d_model)
+        self.lm_head: Linear = Linear(d_model, vocab_size)
 
-        self.cache = {}
+        self.cache: dict[str, np.ndarray] = {}
 
-    def forward(self, X, targets=None):
+    def forward(self, X: np.ndarray, targets: np.ndarray | None = None) -> np.ndarray | tuple[np.ndarray, float]:
         B, T = X.shape
 
         tok_emb = self.tok_emb(X)  # (B, T, C)
@@ -49,7 +49,7 @@ class GPT(Module):
 
         return logits
 
-    def backward(self):
+    def backward(self) -> None:
         logits, targets = self.cache['logits'], self.cache['targets']
         B, T, C = logits.shape
 
@@ -76,11 +76,11 @@ class GPT(Module):
         dX = self.pos_emb.backward(dX)
         self.tok_emb.backward(dX)
 
-    def _create_causal_mask(self, T):
+    def _create_causal_mask(self, T: int) -> np.ndarray:
         mask = np.triu(np.ones((T, T)), k=1) * -1e9  # will add a large negative value to the scores of future tokens
         return mask[None, None, :, :]
 
-    def generate(self, idx, max_new_tokens, temperature=1.0, eos_token_id=None):
+    def generate(self, idx: np.ndarray, max_new_tokens: int, temperature: float = 1.0, eos_token_id: int | None = None) -> np.ndarray:
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.max_len:]
             logits = self(idx_cond)
@@ -97,7 +97,7 @@ class GPT(Module):
 
         return idx
 
-    def params(self):
+    def params(self) -> dict[str, np.ndarray]:
         params = {}
         params.update({f"tok_emb.{k}": v for k, v in self.tok_emb.params().items()})
         params.update({f"pos_emb.{k}": v for k, v in self.pos_emb.params().items()})
@@ -109,7 +109,7 @@ class GPT(Module):
         params.update({f"lm_head.{k}": v for k, v in self.lm_head.params().items()})
         return params
 
-    def grads(self):
+    def grads(self) -> dict[str, np.ndarray | None]:
         grads = {}
         grads.update({f"tok_emb.{k}": v for k, v in self.tok_emb.grads().items()})
         grads.update({f"pos_emb.{k}": v for k, v in self.pos_emb.grads().items()})
