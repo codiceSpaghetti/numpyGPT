@@ -19,26 +19,44 @@ class BPETokenizer:
         self.merges: list[tuple[str, str]] = []
         self.merge_ranks: dict[tuple[str, str], int] = {}
 
+    def _preprocess_text(self, text: str) -> str:
+        """Preprocess text by replacing whitespace with special tokens."""
+        text = text.replace("\n", " <|newline|> ")
+        text = text.replace("\t", " <|tab|> ")
+        text = text.replace("\r", " <|carriage_return|> ")
+        return text
+
+    def _tokenize_to_words(self, text: str) -> list[str]:
+        """Tokenize text into word-level tokens (words, punctuation, special tokens).
+
+        This is the first stage of BPE tokenization before subword merges are applied.
+
+        Handles:
+        1. Special tokens with format <|...|>   -> <\\|[^|]+\\|>
+        2. Words (alphanumerics/underscores)    -> \b\\w+\b
+        3. Punctuation/non-word characters      -> [^\\s\\w]
+        """
+        text = self._preprocess_text(text)
+
+        # Tokenize using regex
+        tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
+
+        # Keep special tokens as-is, don't modify regular tokens
+        tokens = [
+            token if not (token.startswith("<|") and token.endswith("|>")) else token
+            for token in tokens
+        ]
+        return tokens
+
     def _get_word_freqs(self, texts: str | list[str]) -> Counter[str]:
+        """Count word frequencies across texts using consistent tokenization."""
         if isinstance(texts, str):
             texts = [texts]
 
         word_freqs: Counter[str] = Counter()
         for text in texts:
-            text = text.replace("\n", " <|newline|> ")
-            text = text.replace("\t", " <|tab|> ")
-            text = text.replace("\r", " <|carriage_return|> ")
-
-            # Tokenize text into:
-            # 1. Special tokens with format <|...|>   -> <\|[^|]+\|>
-            # 2. Words (alphanumerics/underscores)    -> \b\w+\b
-            # 3. Punctuation/non-word characters      -> [^\s\w]
-            tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
-            tokens = [
-                token if not (token.startswith("<|") and token.endswith("|>")) else token
-                for token in tokens
-            ]
-
+            # Use _tokenize_to_words for consistent tokenization
+            tokens = self._tokenize_to_words(text)
             for token in tokens:
                 word_freqs[token] += 1
         return word_freqs
@@ -135,6 +153,10 @@ class BPETokenizer:
         self.vocab_size = len(self.stoi)
 
     def _tokenize_word(self, word: str) -> list[str]:
+        """Apply BPE merges to a single word to produce subword tokens.
+
+        This is the second stage of BPE tokenization that applies learned merges.
+        """
         if word.startswith("<|") and word.endswith("|>"):
             return [word, "</w>"]
 
@@ -153,58 +175,84 @@ class BPETokenizer:
 
         return word_tokens
 
+    def tokenize(self, text: str) -> list[str]:
+        """Tokenize text into BPE subword tokens.
+
+        This applies the full BPE pipeline:
+        1. Word-level tokenization (splitting text into words)
+        2. Subword-level tokenization (applying BPE merges to each word)
+
+        Returns a list of BPE tokens (strings).
+        """
+        word_tokens = self._tokenize_to_words(text)
+
+        bpe_tokens = []
+        for word_token in word_tokens:
+            subword_tokens = self._tokenize_word(word_token)
+            bpe_tokens.extend(subword_tokens)
+
+        return bpe_tokens
+
     def encode(self, text: str, add_bos: bool = False, add_eos: bool = False) -> list[int]:
-        text = text.replace("\n", " <|newline|> ")
-        text = text.replace("\t", " <|tab|> ")
-        text = text.replace("\r", " <|carriage_return|> ")
+        """Encode text to token IDs by first tokenizing, then mapping to indices.
 
-        tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
-        tokens = [
-            token if not (token.startswith("<|") and token.endswith("|>")) else token
-            for token in tokens
-        ]
+        Process:
+        1. Use tokenize() to get BPE tokens
+        2. Map tokens to their vocabulary indices
+        3. Add special tokens if requested
+        """
+        tokens = self.tokenize(text)
 
-        indices = []
+        indices = [self.stoi.get(token, 1) for token in tokens]  # 1 is <unk>
+
         if add_bos:
-            indices.append(2)  # <bos> index
-
-        for token in tokens:
-            word_tokens = self._tokenize_word(token)
-            for word_token in word_tokens:
-                indices.append(self.stoi.get(word_token, 1))  # 1 is <unk>
-
+            indices = [2] + indices
         if add_eos:
-            indices.append(3)  # <eos> index
+            indices = indices + [3]
 
         return indices
 
     def decode(self, indices: list[int]) -> str:
+        """Decode token IDs back to text.
+
+        Strategy:
+        1. Map indices to tokens
+        2. Filter out control tokens
+        3. Replace special tokens and handle word boundaries carefully
+        4. Clean up formatting with regex
+        """
         tokens = [self.itos.get(idx, "<unk>") for idx in indices]
 
-        # Remove special tokens
-        for special in ["<bos>", "<eos>", "<pad>", "<unk>"]:
-            while special in tokens:
-                tokens.remove(special)
+        # Remove control tokens (but keep whitespace and boundary markers)
+        tokens = [t for t in tokens if t not in ["<bos>", "<eos>", "<pad>", "<unk>"]]
 
         result = []
 
+        special_chars_map = {
+            "<|newline|>": "\n",
+            "<|tab|>": "\t",
+            "<|carriage_return|>": "\r",
+        }
         for i, token in enumerate(tokens):
-            if token == "<|newline|>":
-                result.append("\n")
-            elif token == "<|tab|>":
-                result.append("\t")
-            elif token == "<|carriage_return|>":
-                result.append("\r")
+            if token in special_chars_map:
+                result.append(special_chars_map[token])
+            elif token == "</w>":
+                if i < len(tokens) - 1:
+                    next_token = tokens[i + 1]
+                    if not next_token.startswith("<|"):
+                        result.append(" ")
             else:
                 # Check if token ends with </w> (end of word marker)
                 if token.endswith("</w>"):
-                    word = token[: len("</w>")]  # Remove '</w>'
+                    word = token[:-4]  # Remove '</w>' from the end
                     result.append(word)
 
                     if i < len(tokens) - 1:
-                        result.append(" ")
+                        next_token = tokens[i + 1]
+                        if not next_token.startswith("<|") and next_token != "</w>":
+                            result.append(" ")
                 else:
-                    # it is a subword token
+                    # it is a subword token (no word boundary)
                     result.append(token)
 
         text = "".join(result)
@@ -225,3 +273,13 @@ class BPETokenizer:
     @property
     def bos_token_id(self) -> int:
         return 2
+
+    @property
+    def token_to_idx(self) -> dict[str, int]:
+        """Alias for stoi to match test expectations."""
+        return self.stoi
+
+    @property
+    def idx_to_token(self) -> dict[int, str]:
+        """Alias for itos to match test expectations."""
+        return self.itos

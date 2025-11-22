@@ -4,21 +4,41 @@ class CharTokenizer:
         self.stoi: dict[str, int] = {}
         self.itos: dict[int, str] = {}
 
+    def tokenize(self, text: str) -> list[str]:
+        return list(text)
+
     def build_vocab(self, text: str | list[str]) -> None:
         if isinstance(text, list):
             text = "".join(text)
-        chars = sorted(set(text))
+
+        # Use tokenize() to get tokens
+        tokens = self.tokenize(text)
+        chars = sorted(set(tokens))
+
         self.chars = ["<pad>", "<unk>", "<bos>", "<eos>"] + chars
         self.stoi = {ch: i for i, ch in enumerate(self.chars)}
         self.itos = dict(enumerate(self.chars))
 
-    def encode(self, text: str, add_bos: bool = True, add_eos: bool = True) -> list[int]:
-        tokens = [self.stoi.get(ch, 1) for ch in text]
+    @property
+    def char_to_idx(self) -> dict[str, int]:
+        """Alias for stoi to match test expectations."""
+        return self.stoi
+
+    @property
+    def special_tokens(self) -> list[str]:
+        """Return list of special tokens."""
+        return ["<pad>", "<unk>", "<bos>", "<eos>"]
+
+    def encode(self, text: str, add_bos: bool = False, add_eos: bool = False) -> list[int]:
+        """Encode text to token IDs by first tokenizing, then mapping to indices."""
+        tokens = self.tokenize(text)
+        indices = [self.stoi.get(ch, 1) for ch in tokens]  # 1 is <unk>
+
         if add_bos:
-            tokens = [self.stoi["<bos>"]] + tokens
+            indices = [self.stoi["<bos>"]] + indices
         if add_eos:
-            tokens = tokens + [self.stoi["<eos>"]]
-        return tokens
+            indices = indices + [self.stoi["<eos>"]]
+        return indices
 
     def decode(self, tokens: list[int]) -> str:
         chars = [self.itos[t] for t in tokens if t in self.itos]

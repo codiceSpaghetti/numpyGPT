@@ -9,31 +9,44 @@ class WordTokenizer:
         self.stoi: dict[str, int] = {}
         self.itos: dict[int, str] = {}
 
-    def build_vocab(self, text: str | list[str]) -> None:
-        if isinstance(text, list):
-            text = " ".join(text)
+    def tokenize(self, text: str) -> list[str]:
+        """Tokenize text into words, punctuation, and special tokens.
+
+        This method handles:
+        1. Special tokens with format <|...|>   -> <\\|[^|]+\\|>
+        2. Words (alphanumerics/underscores)    -> \b\\w+\b
+        3. Punctuation/non-word characters      -> [^\\s\\w]
+        """
+        # Replace whitespace characters with special tokens
         text = text.replace("\n", " <|newline|> ")
         text = text.replace("\t", " <|tab|> ")
         text = text.replace("\r", " <|carriage_return|> ")
 
-        # Tokenize text into:
-        # 1. Special tokens with format <|...|>   -> <\|[^|]+\|>
-        # 2. Words (alphanumerics/underscores)    -> \b\w+\b
-        # 3. Punctuation/non-word characters      -> [^\s\w]
         tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
+
         tokens = [
             token.lower() if not (token.startswith("<|") and token.endswith("|>")) else token
             for token in tokens
         ]
+        return tokens
 
+    def build_vocab(self, text: str | list[str]) -> None:
+        """Build vocabulary from text by tokenizing and counting frequencies."""
+        if isinstance(text, list):
+            text = " ".join(text)
+
+        # Use tokenize() to get tokens
+        tokens = self.tokenize(text)
+
+        # Count token frequencies
         word_counts: dict[str, int] = {}
         for token in tokens:
             word_counts[token] = word_counts.get(token, 0) + 1
 
         filtered_words = [word for word, count in word_counts.items() if count >= self.min_freq]
-        sorted_words = sorted(
-            filtered_words, key=lambda x: (-word_counts[x], x)
-        )  # sort by frequency, then alphabetically
+
+        # Sort by frequency (descending), then alphabetically
+        sorted_words = sorted(filtered_words, key=lambda x: (-word_counts[x], x))
 
         if self.max_vocab_size:
             sorted_words = sorted_words[: self.max_vocab_size - 4]
@@ -42,18 +55,12 @@ class WordTokenizer:
         self.stoi = {word: i for i, word in enumerate(self.words)}
         self.itos = dict(enumerate(self.words))
 
-    def encode(self, text: str, add_bos: bool = True, add_eos: bool = True) -> list[int]:
-        text = text.replace("\n", " <|newline|> ")
-        text = text.replace("\t", " <|tab|> ")
-        text = text.replace("\r", " <|carriage_return|> ")
+    def encode(self, text: str, add_bos: bool = False, add_eos: bool = False) -> list[int]:
+        """Encode text to token IDs by first tokenizing, then mapping to indices."""
+        tokens = self.tokenize(text)
 
-        tokens = re.findall(r"<\|[^|]+\|>|\b\w+\b|[^\s\w]", text)
-        tokens = [
-            token.lower() if not (token.startswith("<|") and token.endswith("|>")) else token
-            for token in tokens
-        ]
+        indices = [self.stoi.get(token, 1) for token in tokens]
 
-        indices = [self.stoi.get(token, 1) for token in tokens]  # 1 is the index of <unk>
         if add_bos:
             indices = [2] + indices
         if add_eos:
@@ -103,3 +110,13 @@ class WordTokenizer:
     @property
     def bos_token_id(self) -> int:
         return 2
+
+    @property
+    def word_to_idx(self) -> dict[str, int]:
+        """Alias for stoi to match test expectations."""
+        return self.stoi
+
+    @property
+    def special_tokens(self) -> list[str]:
+        """Return list of special tokens."""
+        return ["<pad>", "<unk>", "<bos>", "<eos>"]
