@@ -10,9 +10,19 @@ Understanding comes from building. This repo implements the core pieces of neura
 
 ## quick start
 
-```python
-pip install numpy 
+**Installation:**
 
+```bash
+# Using uv (recommended)
+uv sync --extra dev
+
+# Or using pip
+pip install -e ".[dev]"
+```
+
+**Usage:**
+
+```python
 # Tokenize data (available char-level, word-level, or subword with BPE)
 ./datagen.py
 
@@ -48,15 +58,15 @@ class Linear:
     def __init__(self, in_features, out_features):
         self.W = np.random.randn(in_features, out_features) * 0.02
         self.b = np.zeros(out_features)
-    
+
     def forward(self, X):
         self.X = X  # cache for backward
         return X @ self.W + self.b
-    
+
     def backward(self, dY):
         # dY: gradient flowing back from next layer
         self.dW = self.X.T @ dY        # gradient w.r.t weights
-        self.db = np.sum(dY, axis=0)   # gradient w.r.t bias  
+        self.db = np.sum(dY, axis=0)   # gradient w.r.t bias
         dX = dY @ self.W.T             # gradient w.r.t input
         return dX
 ```
@@ -83,7 +93,7 @@ test.py                 # Test suite
 ## features
 
 - **Explicit gradients** - see exactly how backprop works
-- **PyTorch-like API** - familiar interface 
+- **PyTorch-like API** - familiar interface
 - **Complete transformer** - multi-head attention, feedforward, layer norm
 - **Flexible tokenization** - character, word-level, or BPE preprocessing
 - **Extensive testing** - test correctness of forward and backward for every layer
@@ -92,7 +102,7 @@ test.py                 # Test suite
 Perfect for understanding how modern language models actually work.
 
 ## resources that I found helpful
-- [pytorch's repo](https://github.com/pytorch/pytorch) – architecture and API inspiration 
+- [pytorch's repo](https://github.com/pytorch/pytorch) – architecture and API inspiration
 - [building micrograd [YT]](https://www.youtube.com/watch?v=VMj-3S1tku0&ab_channel=AndrejKarpathy) - backprop from scratch, explained simply
 - [micrograd](https://github.com/karpathy/micrograd) - A tiny scalar-valued autograd engine
 - [CNN in Numpy for MNIST](https://github.com/ScottBiggs2/Generative-AI-Projects/blob/main/AI%20in%20Numpy/NNs%20from%20Scratch%20-%20Clean.ipynb) - CNN in NumPy for MNIST
@@ -134,7 +144,7 @@ Trained three identical transformer models on Shakespeare, only difference: how 
 ```
 One character = one token.
 
-### word-level  
+### word-level
 ```
 "Hello world!" → ['hello', 'world', '!']
 ```
@@ -203,7 +213,7 @@ Why, then the king's son,
 And send him that he were,
 ```
 
-### word output  
+### word output
 Complete output: [word.out](assets/outputs/word.out)
 
 (Yes, I know I still have some tokenization issues...)
@@ -227,7 +237,7 @@ you with speaks, but ther so ent the vength
 1. **Lower loss ≠ better output**: Character model had lowest loss but worst readability --> loss is lower because the model is predicting 1 of 69 characters, which is much easier than predicting 1 of 6,551 words/subwords.
 2. **Number of parameters**: Despite having the same architecture configuration, the BPE and word level have a much larger embedding matrix that brings its parameters from 3.2M to 6.55M (52% just embedding-related tokens).
 3. **Token efficiency matters**: Same 500 output tokens generated vastly different text lengths: from ~500 with character, ~1500 with BPE and ~1600 with word.
-4. **Stability matters**: BPE's consistent training beats unstable fast learning  
+4. **Stability matters**: BPE's consistent training beats unstable fast learning
 5. **The curse of granularity**: Finer tokens (char) = easier prediction but harder composition. Coarser tokens (word) = harder prediction but natural composition.
 6. **There's no free lunch**: Each approach trades off different aspects
 
